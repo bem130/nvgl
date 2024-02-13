@@ -1,0 +1,15 @@
+{
+  "name": "nvgl",
+  "version": "1.0.0",
+  "description": "Language for project files in NVG, my video editing software",
+  "main": "nvgl.js",
+  "scripts": {
+    "test_expr": "npx pegjs expr.pegjs && node test_expr.js"
+  },
+  "author": "bem130 <bem130@ymail.ne.jp>",
+  "license": "MIT",
+  "devDependencies": {
+    "monaco-editor": "^0.46.0",
+    "pegjs": "^0.10.0"
+  }
+}
