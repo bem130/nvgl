@@ -24,12 +24,12 @@ some--
 await some
 
 [4]
+some^some
+
+[5]
 some*some
 some/some
 some%some
-
-[5]
-some^some
 
 [6]
 some+some

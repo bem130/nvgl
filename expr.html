@@ -36,11 +36,15 @@ function update() {
     try {
         let ret1 = module.exports.parse(i,{mode:"js"});
         let ret2 = module.exports.parse(i,{mode:"parse"});
-        updateEditorData(output1,ret1)
+        console.log(ret1)
+        console.log(ret2)
+        updateEditorData(output1,ret1.toString())
         updateEditorData(output2,JSON.stringify(ret2,null,4))
     }
     catch (e) {
         console.error(e);
+        updateEditorData(output1,"error")
+        updateEditorData(output2,JSON.stringify([e.name,e.message,e.location],null,4))
     }
 }
 function updateEditorData(editor,data) {
