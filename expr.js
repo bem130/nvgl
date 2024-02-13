@@ -145,11 +145,11 @@ function peg$parse(input, options) {
       peg$c1 = peg$literalExpectation("return", false),
       peg$c2 = ";",
       peg$c3 = peg$literalExpectation(";", false),
-      peg$c4 = function(v) {return resSwitch({type:"return",expr:v},`return ${v};`)},
+      peg$c4 = function(v) {return resSwitch({group:"stat",type:"return",expr:v},`return ${v};`)},
       peg$c5 = "<:",
       peg$c6 = peg$literalExpectation("<:", false),
-      peg$c7 = function(n, v) {return resSwitch({type:"assign",assign:n,expr:v},`${n} = ${v};`)},
-      peg$c8 = function(v) {return resSwitch({type:"expr",expr:v},`${v};`)},
+      peg$c7 = function(n, v) {return resSwitch({group:"stat",type:"assign",assign:n,expr:v},`${n} = ${v};`)},
+      peg$c8 = function(v) {return resSwitch({group:"stat",type:"expr",expr:v},`${v};`)},
       peg$c9 = "(",
       peg$c10 = peg$literalExpectation("(", false),
       peg$c11 = ")",
@@ -158,7 +158,7 @@ function peg$parse(input, options) {
       peg$c14 = function(l, c) {return c(l)},
       peg$c15 = "::",
       peg$c16 = peg$literalExpectation("::", false),
-      peg$c17 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"::"],`(${l}).${r}`))}},
+      peg$c17 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"::"},`(${l}).${r}`))}},
       peg$c18 = function() {return (l)=>{return l}},
       peg$c19 = "+",
       peg$c20 = peg$literalExpectation("+", false),
@@ -168,40 +168,40 @@ function peg$parse(input, options) {
       peg$c24 = function(v) {return resSwitch(["-",v],`-(${v})`)},
       peg$c25 = "^",
       peg$c26 = peg$literalExpectation("^", false),
-      peg$c27 = function(l, r) {return resSwitch([l,r,"^"],`${l}**(${r})`)},
+      peg$c27 = function(l, r) {return resSwitch({type:"opr",l:l,r:r,opr:"^"},`${l}**(${r})`)},
       peg$c28 = "*",
       peg$c29 = peg$literalExpectation("*", false),
-      peg$c30 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"*"],`(${l}*${r})`))}},
+      peg$c30 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"*"},`(${l}*${r})`))}},
       peg$c31 = "/",
       peg$c32 = peg$literalExpectation("/", false),
-      peg$c33 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"/"],`(${l}/${r})`))}},
+      peg$c33 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"/"},`(${l}/${r})`))}},
       peg$c34 = "%",
       peg$c35 = peg$literalExpectation("%", false),
-      peg$c36 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"%"],`(${l}%${r})`))}},
-      peg$c37 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"+"],`(${l}+${r})`))}},
-      peg$c38 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"-"],`(${l}-${r})`))}},
+      peg$c36 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"%"},`(${l}%${r})`))}},
+      peg$c37 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"+"},`(${l}+${r})`))}},
+      peg$c38 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"-"},`(${l}-${r})`))}},
       peg$c39 = "<",
       peg$c40 = peg$literalExpectation("<", false),
-      peg$c41 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"<"],`(${l}<${r})`))}},
-      peg$c42 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"<="],`(${l}<=${r})`))}},
+      peg$c41 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"<"},`(${l}<${r})`))}},
+      peg$c42 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"<="},`(${l}<=${r})`))}},
       peg$c43 = ">",
       peg$c44 = peg$literalExpectation(">", false),
-      peg$c45 = function(r, c) {return (l)=>{return c(resSwitch([l,r,">"],`(${l}>${r})`))}},
+      peg$c45 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:">"},`(${l}>${r})`))}},
       peg$c46 = ">=",
       peg$c47 = peg$literalExpectation(">=", false),
-      peg$c48 = function(r, c) {return (l)=>{return c(resSwitch([l,r,">="],`(${l}>=${r})`))}},
+      peg$c48 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:">="},`(${l}>=${r})`))}},
       peg$c49 = "=",
       peg$c50 = peg$literalExpectation("=", false),
-      peg$c51 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"="],`(${l}==${r})`))}},
+      peg$c51 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"="},`(${l}==${r})`))}},
       peg$c52 = "!=",
       peg$c53 = peg$literalExpectation("!=", false),
-      peg$c54 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"!="],`(${l}!=${r})`))}},
+      peg$c54 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"!="},`(${l}!=${r})`))}},
       peg$c55 = "==",
       peg$c56 = peg$literalExpectation("==", false),
-      peg$c57 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"=="],`(${l}===${r})`))}},
+      peg$c57 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"=="},`(${l}===${r})`))}},
       peg$c58 = "!==",
       peg$c59 = peg$literalExpectation("!==", false),
-      peg$c60 = function(r, c) {return (l)=>{return c(resSwitch([l,r,"!=="],`(${l}!==${r})`))}},
+      peg$c60 = function(r, c) {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"!=="},`(${l}!==${r})`))}},
       peg$c61 = " ",
       peg$c62 = peg$literalExpectation(" ", false),
       peg$c63 = function(v) {return Number(v)},
@@ -209,18 +209,18 @@ function peg$parse(input, options) {
       peg$c65 = peg$classExpectation([["0", "9"]], false, false),
       peg$c66 = ".",
       peg$c67 = peg$literalExpectation(".", false),
-      peg$c68 = function(integer_part, decimal_part) { return resSwitch({type:"num",value:integer_part.join("")+"."+decimal_part.join("")},integer_part.join("")+"."+decimal_part.join("")) },
-      peg$c69 = function(integer_part) { return resSwitch({type:"num",value:integer_part.join("")},integer_part.join("")) },
+      peg$c68 = function(integer_part, decimal_part) { return resSwitch({group:"literal",type:"num",value:integer_part.join("")+"."+decimal_part.join("")},integer_part.join("")+"."+decimal_part.join("")) },
+      peg$c69 = function(integer_part) { return resSwitch({group:"literal",type:"num",value:integer_part.join("")},integer_part.join("")) },
       peg$c70 = "true",
       peg$c71 = peg$literalExpectation("true", false),
-      peg$c72 = function() {return resSwitch({type:"bool",value:"true"},`true`)},
-      peg$c73 = function() {return resSwitch({type:"bool",value:"false"},`false`)},
+      peg$c72 = function() {return resSwitch({group:"literal",type:"bool",value:"true"},`true`)},
+      peg$c73 = function() {return resSwitch({group:"literal",type:"bool",value:"false"},`false`)},
       peg$c74 = "\"",
       peg$c75 = peg$literalExpectation("\"", false),
       peg$c76 = /^[a-z]/,
       peg$c77 = peg$classExpectation([["a", "z"]], false, false),
-      peg$c78 = function(content) {return resSwitch({type:"str",value:content.join("")},`'${content.join("")}'`)},
-      peg$c79 = function(content) {return resSwitch({type:"name",value:content.join("")},content.join(""))},
+      peg$c78 = function(content) {return resSwitch({group:"literal",type:"str",value:content.join("")},`'${content.join("")}'`)},
+      peg$c79 = function(content) {return resSwitch({group:"name",value:content.join("")},content.join(""))},
       peg$c80 = "{",
       peg$c81 = peg$literalExpectation("{", false),
       peg$c82 = ",",
@@ -230,14 +230,14 @@ function peg$parse(input, options) {
       peg$c86 = function(v, v2) {
               let ret = v.map((x)=>{return x[0]})
               if (v2!=null) {ret.push(v2)}
-              return resSwitch({type:"arr",val:ret},"["+ret.join(",")+"]")
+              return resSwitch({group:"literal",type:"arr",val:ret},"(["+ret.join(",")+"])")
           },
       peg$c87 = ":",
       peg$c88 = peg$literalExpectation(":", false),
       peg$c89 = function(v, v2) {
               let ret = v.map((x)=>{return [x[0],x[2]]})
               if (v2!=null) {ret.push([v2[0],v2[2]])}
-              return resSwitch({type:"obj",val:ret},"{"+ret.map((x)=>{return `${x[0]}: ${x[1]}`}).join(",")+"}")
+              return resSwitch({group:"literal",type:"obj",val:ret},"({"+ret.map((x)=>{return `${x[0]}: ${x[1]}`}).join(",")+"})")
           },
       peg$c90 = "@",
       peg$c91 = peg$literalExpectation("@", false),
@@ -245,7 +245,7 @@ function peg$parse(input, options) {
               let ret1 = larg==null?[]:args.map((x)=>{return x[0]}).concat(larg)
               let ret2 = e;
               if (e2!=null) {ret2.push(e2)}
-              return resSwitch([ret1,ret2],`(${ret1.join(",")})=>{${ret2.join("")}}`)
+              return resSwitch([ret1,ret2],`((${ret1.join(",")})=>{${ret2.join("")}})`)
           },
 
       peg$currPos          = 0,
@@ -1712,7 +1712,7 @@ function peg$parse(input, options) {
         s0 = s1;
         if (s0 === peg$FAILED) {
           s0 = peg$currPos;
-          s1 = peg$parsearray();
+          s1 = peg$parseobject();
           if (s1 !== peg$FAILED) {
             peg$savedPos = s0;
             s1 = peg$c13(s1);
@@ -1720,7 +1720,7 @@ function peg$parse(input, options) {
           s0 = s1;
           if (s0 === peg$FAILED) {
             s0 = peg$currPos;
-            s1 = peg$parseobject();
+            s1 = peg$parsearray();
             if (s1 !== peg$FAILED) {
               peg$savedPos = s0;
               s1 = peg$c13(s1);
@@ -1755,12 +1755,21 @@ function peg$parse(input, options) {
     s0 = s1;
     if (s0 === peg$FAILED) {
       s0 = peg$currPos;
-      s1 = peg$parsestring();
+      s1 = peg$parsename();
       if (s1 !== peg$FAILED) {
         peg$savedPos = s0;
         s1 = peg$c13(s1);
       }
       s0 = s1;
+      if (s0 === peg$FAILED) {
+        s0 = peg$currPos;
+        s1 = peg$parsestring();
+        if (s1 !== peg$FAILED) {
+          peg$savedPos = s0;
+          s1 = peg$c13(s1);
+        }
+        s0 = s1;
+      }
     }
 
     return s0;
@@ -2015,7 +2024,7 @@ function peg$parse(input, options) {
     if (s1 !== peg$FAILED) {
       s2 = [];
       s3 = peg$currPos;
-      s4 = peg$parseliteral();
+      s4 = peg$parsel8();
       if (s4 !== peg$FAILED) {
         if (input.charCodeAt(peg$currPos) === 44) {
           s5 = peg$c82;
@@ -2038,7 +2047,7 @@ function peg$parse(input, options) {
       while (s3 !== peg$FAILED) {
         s2.push(s3);
         s3 = peg$currPos;
-        s4 = peg$parseliteral();
+        s4 = peg$parsel8();
         if (s4 !== peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 44) {
             s5 = peg$c82;
@@ -2060,7 +2069,7 @@ function peg$parse(input, options) {
         }
       }
       if (s2 !== peg$FAILED) {
-        s3 = peg$parseliteral();
+        s3 = peg$parsel8();
         if (s3 === peg$FAILED) {
           s3 = null;
         }
@@ -2120,7 +2129,7 @@ function peg$parse(input, options) {
           if (peg$silentFails === 0) { peg$fail(peg$c88); }
         }
         if (s5 !== peg$FAILED) {
-          s6 = peg$parseliteral();
+          s6 = peg$parsel8();
           if (s6 !== peg$FAILED) {
             if (input.charCodeAt(peg$currPos) === 44) {
               s7 = peg$c82;
@@ -2161,7 +2170,7 @@ function peg$parse(input, options) {
             if (peg$silentFails === 0) { peg$fail(peg$c88); }
           }
           if (s5 !== peg$FAILED) {
-            s6 = peg$parseliteral();
+            s6 = peg$parsel8();
             if (s6 !== peg$FAILED) {
               if (input.charCodeAt(peg$currPos) === 44) {
                 s7 = peg$c82;
@@ -2202,7 +2211,7 @@ function peg$parse(input, options) {
             if (peg$silentFails === 0) { peg$fail(peg$c88); }
           }
           if (s5 !== peg$FAILED) {
-            s6 = peg$parseliteral();
+            s6 = peg$parsel8();
             if (s6 !== peg$FAILED) {
               s4 = [s4, s5, s6];
               s3 = s4;

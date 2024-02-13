@@ -9,14 +9,14 @@ start
     = stat2
 
 stat1
-    = "return" s v:top s? ";" {return resSwitch({type:"return",expr:v},`return ${v};`)}
-    / n:name s? "<:" s? v:top s? ";" {return resSwitch({type:"assign",assign:n,expr:v},`${n} = ${v};`)}
-    / v:top s? ";" {return resSwitch({type:"expr",expr:v},`${v};`)}
+    = "return" s v:top s? ";" {return resSwitch({group:"stat",type:"return",expr:v},`return ${v};`)}
+    / n:name s? "<:" s? v:top s? ";" {return resSwitch({group:"stat",type:"assign",assign:n,expr:v},`${n} = ${v};`)}
+    / v:top s? ";" {return resSwitch({group:"stat",type:"expr",expr:v},`${v};`)}
 
 stat2
-    = "return" s v:top s? ";"? {return resSwitch({type:"return",expr:v},`return ${v};`)}
-    / n:name s? "<:" s? v:top s? ";"? {return resSwitch({type:"assign",assign:n,expr:v},`${n} = ${v};`)}
-    / v:top s? ";"? {return resSwitch({type:"expr",expr:v},`${v};`)}
+    = "return" s v:top s? ";"? {return resSwitch({group:"stat",type:"return",expr:v},`return ${v};`)}
+    / n:name s? "<:" s? v:top s? ";"? {return resSwitch({group:"stat",type:"assign",assign:n,expr:v},`${n} = ${v};`)}
+    / v:top s? ";"? {return resSwitch({group:"stat",type:"expr",expr:v},`${v};`)}
 
 top
     = l9
@@ -30,7 +30,7 @@ l1
     = l:l0 c:l1cont {return c(l)}
     / l0
 l1cont
-    = s? "::" r:l0 c:l1cont {return (l)=>{return c(resSwitch([l,r,"::"],`(${l}).${r}`))}}
+    = s? "::" r:l0 c:l1cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"::"},`(${l}).${r}`))}}
     / s? {return (l)=>{return l}}
 
 l2
@@ -43,44 +43,44 @@ l3
 
 
 l4
-    = l:l3 "^" r:l4 {return resSwitch([l,r,"^"],`${l}**(${r})`)}
+    = l:l3 "^" r:l4 {return resSwitch({type:"opr",l:l,r:r,opr:"^"},`${l}**(${r})`)}
     / l3
 
 l5
     = l:l4 c:l5cont {return c(l)}
     / l4
 l5cont
-    = s? "*" r:l4 c:l5cont {return (l)=>{return c(resSwitch([l,r,"*"],`(${l}*${r})`))}}
-    / s? "/" r:l4 c:l5cont {return (l)=>{return c(resSwitch([l,r,"/"],`(${l}/${r})`))}}
-    / s? "%" r:l4 c:l5cont {return (l)=>{return c(resSwitch([l,r,"%"],`(${l}%${r})`))}}
+    = s? "*" r:l4 c:l5cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"*"},`(${l}*${r})`))}}
+    / s? "/" r:l4 c:l5cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"/"},`(${l}/${r})`))}}
+    / s? "%" r:l4 c:l5cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"%"},`(${l}%${r})`))}}
     / s? {return (l)=>{return l}}
 
 l6
     = l:l5 c:l6cont {return c(l)}
     / l5
 l6cont
-    = s? "+" r:l5 c:l6cont {return (l)=>{return c(resSwitch([l,r,"+"],`(${l}+${r})`))}}
-    / s? "-" r:l5 c:l6cont {return (l)=>{return c(resSwitch([l,r,"-"],`(${l}-${r})`))}}
+    = s? "+" r:l5 c:l6cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"+"},`(${l}+${r})`))}}
+    / s? "-" r:l5 c:l6cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"-"},`(${l}-${r})`))}}
     / s? {return (l)=>{return l}}
 
 l7
     = l:l6 c:l7cont {return c(l)}
     / l6
 l7cont
-    = s? "<" r:l6 c:l7cont {return (l)=>{return c(resSwitch([l,r,"<"],`(${l}<${r})`))}}
-    / s? "<" r:l6 c:l7cont {return (l)=>{return c(resSwitch([l,r,"<="],`(${l}<=${r})`))}}
-    / s? ">" r:l6 c:l7cont {return (l)=>{return c(resSwitch([l,r,">"],`(${l}>${r})`))}}
-    / s? ">=" r:l6 c:l7cont {return (l)=>{return c(resSwitch([l,r,">="],`(${l}>=${r})`))}}
+    = s? "<" r:l6 c:l7cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"<"},`(${l}<${r})`))}}
+    / s? "<" r:l6 c:l7cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"<="},`(${l}<=${r})`))}}
+    / s? ">" r:l6 c:l7cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:">"},`(${l}>${r})`))}}
+    / s? ">=" r:l6 c:l7cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:">="},`(${l}>=${r})`))}}
     / s? {return (l)=>{return l}}
 
 l8
     = l:l7 c:l8cont {return c(l)}
     / l7
 l8cont
-    = s? "=" r:l7 c:l8cont {return (l)=>{return c(resSwitch([l,r,"="],`(${l}==${r})`))}}
-    / s? "!=" r:l7 c:l8cont {return (l)=>{return c(resSwitch([l,r,"!="],`(${l}!=${r})`))}}
-    / s? "==" r:l7 c:l8cont {return (l)=>{return c(resSwitch([l,r,"=="],`(${l}===${r})`))}}
-    / s? "!==" r:l7 c:l8cont {return (l)=>{return c(resSwitch([l,r,"!=="],`(${l}!==${r})`))}}
+    = s? "=" r:l7 c:l8cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"="},`(${l}==${r})`))}}
+    / s? "!=" r:l7 c:l8cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"!="},`(${l}!=${r})`))}}
+    / s? "==" r:l7 c:l8cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"=="},`(${l}===${r})`))}}
+    / s? "!==" r:l7 c:l8cont {return (l)=>{return c(resSwitch({type:"opr",l:l,r:r,opr:"!=="},`(${l}!==${r})`))}}
     / s? {return (l)=>{return l}}
 
 l9
@@ -95,40 +95,41 @@ literal
     = v:number {return v}
     / v:boolean {return v}
     / v:string {return v}
-    / v:array {return v}
     / v:object {return v}
+    / v:array {return v}
     / v:function {return v}
 
 key
     = v:number {return Number(v)}
+    / v:name {return v}
     / v:string {return v}
 
 number
-    = integer_part:[0-9]+ "." decimal_part:[0-9]+ { return resSwitch({type:"num",value:integer_part.join("")+"."+decimal_part.join("")},integer_part.join("")+"."+decimal_part.join("")) }
-    / integer_part:[0-9]+ { return resSwitch({type:"num",value:integer_part.join("")},integer_part.join("")) }
+    = integer_part:[0-9]+ "." decimal_part:[0-9]+ { return resSwitch({group:"literal",type:"num",value:integer_part.join("")+"."+decimal_part.join("")},integer_part.join("")+"."+decimal_part.join("")) }
+    / integer_part:[0-9]+ { return resSwitch({group:"literal",type:"num",value:integer_part.join("")},integer_part.join("")) }
 
 boolean
-    = "true" {return resSwitch({type:"bool",value:"true"},`true`)}
-    / "true" {return resSwitch({type:"bool",value:"false"},`false`)}
+    = "true" {return resSwitch({group:"literal",type:"bool",value:"true"},`true`)}
+    / "true" {return resSwitch({group:"literal",type:"bool",value:"false"},`false`)}
 
 string
-    = "\"" content:([a-z]*) "\"" {return resSwitch({type:"str",value:content.join("")},`'${content.join("")}'`)}
+    = "\"" content:([a-z]*) "\"" {return resSwitch({group:"literal",type:"str",value:content.join("")},`'${content.join("")}'`)}
 
 name
-    = content:([a-z]+) {return resSwitch({type:"name",value:content.join("")},content.join(""))}
+    = content:([a-z]+) {return resSwitch({group:"name",value:content.join("")},content.join(""))}
 
 array
-    = "{" v:( literal "," )* v2:literal? "}" {
+    = "{" v:( top "," )* v2:top? "}" {
         let ret = v.map((x)=>{return x[0]})
         if (v2!=null) {ret.push(v2)}
-        return resSwitch({type:"arr",val:ret},"["+ret.join(",")+"]")
+        return resSwitch({group:"literal",type:"arr",val:ret},"(["+ret.join(",")+"])")
     }
 
 object
-    = "{" v:( key ":" literal "," )* v2:( key ":" literal )? "}" {
+    = "{" v:( key ":" top "," )* v2:( key ":" top )? "}" {
         let ret = v.map((x)=>{return [x[0],x[2]]})
         if (v2!=null) {ret.push([v2[0],v2[2]])}
-        return resSwitch({type:"obj",val:ret},"{"+ret.map((x)=>{return `${x[0]}: ${x[1]}`}).join(",")+"}")
+        return resSwitch({group:"literal",type:"obj",val:ret},"({"+ret.map((x)=>{return `${x[0]}: ${x[1]}`}).join(",")+"})")
     }
 
 function
@@ -136,5 +137,5 @@ function
         let ret1 = larg==null?[]:args.map((x)=>{return x[0]}).concat(larg)
         let ret2 = e;
         if (e2!=null) {ret2.push(e2)}
-        return resSwitch([ret1,ret2],`(${ret1.join(",")})=>{${ret2.join("")}}`)
+        return resSwitch([ret1,ret2],`((${ret1.join(",")})=>{${ret2.join("")}})`)
     }
