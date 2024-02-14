@@ -10,6 +10,7 @@
                 return evalu;
         }
     }
+    let variables = options.vars??{};
 }
 
 start
@@ -40,15 +41,17 @@ l1cont
     = s? "::" r:name c:l1cont {return (l)=>{return c(Res({group:"call",l:l,r:r,type:"::",eval:(mode=="parse"?(l.eval[r.eval]):null)},`${l}[${r}]`,mode=="eval"?(l[r]):null))}}
     / s? ":[" r:top "]" c:l1cont {return (l)=>{return c(Res({group:"call",l:l,r:r,type:":[]",eval:(mode=="parse"?(l.eval[r.eval]):null)},`${l}[${r}]`,mode=="eval"?(l[r]):null))}}
     / s? "(" r:top ")" c:l1cont {return (l)=>{return c(Res({group:"call",l:l,r:r,type:"()",eval:(mode=="parse"?(l.eval(r.eval)):null)},`${l}(${r})`,mode=="eval"?(l(r)):null))}}
-    / s? "@(" r:top ")" c:l1cont {return (l)=>{return c(Res({group:"call",l:l,r:r,type:"()",eval:(mode=="parse"?(new l.eval(r.eval)):null)},`new ${l}(${r})`,mode=="eval"?(new l(r)):null))}}
+    / s? "@(" r:top ")" c:l1cont {return (l)=>{return c(Res({group:"call",l:l,r:r,type:"@()",eval:(mode=="parse"?(new l.eval(r.eval)):null)},`new ${l}(${r})`,mode=="eval"?(new l(r)):null))}}
     / s_? {return (l)=>{return l}}
 
 l2
     = l1
 
 l3
-    = s? "+" v:l4 {return Res({group:"opr",r:v,type:"_+",eval:mode=="parse"?(+v.eval):null},`+${v}`,mode=="eval"?(+v):null)}
-    / s? "-" v:l4 {return Res({group:"opr",r:v,type:"_-",eval:mode=="parse"?(+v.eval):null},`-${v}`,mode=="eval"?(+v):null)}
+    = s? "!" v:l4 {return Res({group:"opr",r:v,type:"_!",eval:mode=="parse"?(!v.eval):null},`(!${v})`,mode=="eval"?(!v):null)}
+    / s? "+" v:l4 {return Res({group:"opr",r:v,type:"_+",eval:mode=="parse"?(+v.eval):null},`+${v}`,mode=="eval"?(+v):null)}
+    / s? "-" v:l4 {return Res({group:"opr",r:v,type:"_-",eval:mode=="parse"?(-v.eval):null},`-${v}`,mode=="eval"?(-v):null)}
+    / s? "√" v:l4 {return Res({group:"opr",r:v,type:"_√",eval:mode=="parse"?(Math.sqrt(v.eval)):null},`(Math.sqrt(${v}))`,mode=="eval"?(Math.sqrt(v)):null)}
     / l2
 
 
@@ -133,9 +136,9 @@ name_
     = content:([a-zA-Z]+) {
         let ret = content.join("");
         return Res(
-            {group:"name",value:ret,eval:eval(ret)},
+            {group:"name",value:ret,eval:variables[ret]},
             ret,
-            eval(ret)
+            variables[ret]
         )}
 name
     = content:([a-zA-Z]+) {let ret = content.join("");return Res({group:"name",value:ret,eval:ret},`"${ret}"`,ret)}

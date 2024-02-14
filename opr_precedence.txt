@@ -21,7 +21,6 @@ some--
 +some
 -some
 √some
-await some
 
 [4]
 some^some
