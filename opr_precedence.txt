@@ -9,7 +9,7 @@ https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Operators/Operato
 [1]
 some(some)
 some::some
-some[some]
+some:[some]
 new some(some)
 
 [2]

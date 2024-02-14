@@ -10,41 +10,40 @@
         <meta property="description" content="A playground for expression parsing in the language of project files in my video editing software NVG.">
     </head>
     <body>
-        <input type="text" id="input">
+        Input
+        <div id="input" style="height: 20px"></div>
+        Output
         <div class="output" style="height: 20px"></div>
-        <div class="output" style="height: calc(100dvh - 100px)"></div>
+        <div class="output" style="height: 100px"></div>
+        <div class="output" style="height: calc(100dvh - 260px)"></div>
     </body>
 </html>
 <script>module={}</script>
 <script type="module" src="./expr.js"></script>
 <script>
 
-var input = document.querySelector("#input");
-var output1;
-var output2;
-
-input.onchange = update;
-input.onkeyup = update;
 window.onload = ()=>{
-    if (input.value=="") {input.value = `(1+3)*3+2+{"a":{"b":5},1:2}::a::b`}
+    if (input.getValue()=="") {input.setValue(`(1+3)*3+2+{"a":{"b":5},1:2}::a::b`)}
     update();
 };
 
 function update() {
-    let i = input.value;
+    let i = input.getValue();
     console.log("input: ",i);
     try {
-        let ret1 = module.exports.parse(i,{mode:"js"});
-        let ret2 = module.exports.parse(i,{mode:"parse"});
-        console.log(ret1)
-        console.log(ret2)
-        updateEditorData(output1,ret1.toString())
-        updateEditorData(output2,JSON.stringify(ret2,null,4))
+        let parseRet = module.exports.parse(i,{mode:"parse"});
+        let jsRet = module.exports.parse(i,{mode:"js"});
+        let evalRet = module.exports.parse(i,{mode:"eval"});
+        updateEditorData(parseOut,JSON.stringify(parseRet,null,4));
+        updateEditorData(jsOut,jsRet.toString());
+        updateEditorData(evalOut,JSON.stringify(evalRet,null,4));
+        console.log(evalRet)
     }
     catch (e) {
         console.error(e);
-        updateEditorData(output1,"error")
-        updateEditorData(output2,JSON.stringify([e.name,e.message,e.location],null,4))
+        updateEditorData(jsOut,e.name)
+        updateEditorData(evalOut,e.message)
+        updateEditorData(parseOut,JSON.stringify([e.name,e.message,e.location],null,4))
     }
 }
 
@@ -56,7 +55,19 @@ function updateEditorData(editor,data) {
 require.config({ paths: { vs: "./node_modules/monaco-editor/min/vs" } });
 
 require(["vs/editor/editor.main"], function () {
-    output1 = monaco.editor.create(document.querySelectorAll(".output")[0],{
+    input = monaco.editor.create(document.querySelector("#input"),{
+        readOnly: false,
+        theme: "vs-dark",
+        roundedSelection: true,
+        lineNumbers: "off",
+        automaticLayout: true,
+    });
+    input.getModel().onDidChangeContent((e)=>{
+        update()
+    })
+});
+require(["vs/editor/editor.main"], function () {
+    jsOut = monaco.editor.create(document.querySelectorAll(".output")[0],{
         language: "javascript",
         readOnly: true,
         theme: "vs-dark",
@@ -66,7 +77,17 @@ require(["vs/editor/editor.main"], function () {
     });
 });
 require(["vs/editor/editor.main"], function () {
-    output2 = monaco.editor.create(document.querySelectorAll(".output")[1],{
+    evalOut = monaco.editor.create(document.querySelectorAll(".output")[1],{
+        language: "javascript",
+        readOnly: true,
+        theme: "vs-dark",
+        roundedSelection: true,
+        lineNumbers: "off",
+        automaticLayout: true,
+    });
+});
+require(["vs/editor/editor.main"], function () {
+    parseOut = monaco.editor.create(document.querySelectorAll(".output")[2],{
         language: "javascript",
         readOnly: true,
         theme: "vs-dark",
@@ -82,11 +103,26 @@ require(["vs/editor/editor.main"], function () {
     user-select: none;
 }
 
-#input {
-    width: calc(100% - 20px);
+body {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 5px;
+    padding-left: 10px;
+    margin: 0;
+    width: calc(100dvw - 15px);
+    height: calc(100dvh - 10px);
+    overflow: hidden;
+    background: rgba(0, 106, 255, 0.137);
 }
+
+#input {
+    margin: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
 .output {
-    margin: 5px;
+    margin: 10px;
 }
 
 </style>
