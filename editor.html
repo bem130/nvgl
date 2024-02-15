@@ -1,0 +1,234 @@
+<html>
+    <body>
+        <head>
+            <link href="./highlight_tokenizer.css" rel="stylesheet">
+            <link href="./highlight_parser.css" rel="stylesheet">
+            <link href="./jsonviewer.css" rel="stylesheet">
+            <script src="./jsonviewer.js"></script>
+            <link href="./nml2html.css" rel="stylesheet">
+            <meta charset="UTF-8">
+            <meta property="og:title" content="NLP Editor">
+            <meta property="og:description" content="Neknaj Language for Programming のオンラインエディタです。">
+            <meta property="description" content="Neknaj Language for Programming のオンラインエディタです。">
+        </head>
+        <main>
+            <textarea id="editor" spellcheck="false" wrap="off" class="spread">@include
+    Text
+@init
+    return
+@obj text
+    &length
+        return $:l
+    &text 
+        return "text: " + $:t
+    &textcolor
+        return #000
+    &color
+        return #ff5575
+    &getframe
+        return $:t:Text:toImage(30,30,30)
+
+@timeline
+    text(0,"hello world",10)
+    text(10,"hello world",10)
+</textarea>
+            <div id="Tree1" class="spread"></div>
+            <div id="Preview" class="spread"></div>
+        </main>
+    </body>
+</html>
+
+<script src="nvgl.js"></script>
+<script>
+
+const editor = document.getElementById("editor");
+var nmlt;
+
+function showTable(obj,elm,defaultopen=false) {
+    elm.innerHTML = ""
+    if (!(obj instanceof Array)) {
+        throw `given Object is not Array`;
+        return false;
+    }
+    let index = Object.keys(obj[0])
+    //console.log(index)
+    {
+        let tableelm = document.createElement("table");
+        { // head
+            let trelm = document.createElement("tr");
+            for (let name of index) {
+                let thelm = document.createElement("th");
+                thelm.innerText = name;
+                trelm.appendChild(thelm);
+            }
+            tableelm.appendChild(trelm);
+        }
+        { // body
+            for (let col of obj) {
+                let trelm = document.createElement("tr");
+                for (let name of index) {
+                    //console.log(col,name)
+                    let tdelm = document.createElement("td");
+                    let divelm = document.createElement("div");
+                    showJSON(col[name],divelm,false)
+                    tdelm.appendChild(divelm)
+                    trelm.appendChild(tdelm);
+                }
+                tableelm.appendChild(trelm);
+            }
+        }
+        elm.appendChild(tableelm)
+    }
+}
+
+
+//editor.onchange = update;
+editor.onkeyup = update;
+//editor.oninput = update;
+
+update()
+function update() {
+    nmlt = new NVGLang(`data:text/plain;charset=UTF-8;base64,${btoa(String.fromCharCode.apply(null, new TextEncoder().encode(editor.value)))}`);
+    try {
+        nmlt.parseTree_root();
+    }
+    catch (e) {
+        console.error(e)
+    }
+    // try {
+    //     nmlt.tokenize();
+    // }
+    // catch (e) {
+    //     console.error(e)
+    // }
+    // try {
+    //     nmlt.parse();
+    //     nmlt.buildAST1();
+    // }
+    // catch (e) {
+    //     console.error(e)
+    //     console.info({"nmlt.ast1i":nmlt.ast1i})
+    //     console.log(nmlt.ast1)
+    // }
+    //console.log(nmlt.tokenarr)
+    //console.table(nmlt.tokenarr)
+    showJSON(nmlt.parseTree,document.getElementById("Tree1"),true,["span","embtype"]);
+    NML_showAsHTML(nmlt.parseTree,document.getElementById("Preview"));
+    //console.log(nmlt)
+}
+
+</script>
+<style>
+    body {
+        color-scheme: dark;
+        background-color: black;
+        color: white;
+        height: 100dvh;
+        padding: 0;
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    main {
+        display: flex;
+        height: 100%;
+    }
+    #editor {
+        font-size: 1em;
+        background: transparent;
+        color: white;
+        outline: none;
+        border: none;
+        resize: none;
+        overflow: scroll;
+        line-height: 1.1em;
+        padding-left: 5px;
+    }
+    #libpath {
+        font-size: 1em;
+        background: transparent;
+        color: white;
+        outline: none;
+        resize: none;
+        overflow: scroll;
+        padding: 10px;
+        line-height: 1.1em;
+        word-wrap: unset;
+        width: 100%;
+    }
+    .highlight {
+        font-size: 1em;
+        font-family: monospace;
+        background-color: rgb(0, 4, 26);
+        color: white;
+        height: 100dvh;
+        overflow: scroll;
+        line-height: 1.1em;
+    }
+    .linenumber {
+        font-size: 1em;
+        color: rgba(255, 255, 255, 0.6);
+        display: inline-block;
+        margin: 0;
+        margin-right: 10px;
+        padding-left: 10px;
+        width: 40px;
+        border-right: 1px solid rgb(108, 68, 43);
+        background-color: rgb(0, 17, 69);
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    table {
+        border: rgba(255, 255, 255, 0.3) solid 1px;
+        border-radius: 10px;
+        margin: 5px;
+        padding: 5px;
+        position: relative;
+    }
+    table>tr>th {
+        border: rgba(255, 255, 255, 0.25) solid 1px;
+        background-color: rgba(0, 0, 0, 0.6);
+        border-radius: 2px;
+        position: sticky;
+        top: 5px;
+        z-index: 1;
+    }
+    table>tr>td {
+        border: rgba(255, 255, 255, 0.2) solid 1px;
+        border-radius: 2px;
+        padding: 2px;
+    }
+
+    .spread {
+        width: 100%;
+        overflow: scroll;
+    }
+    .spread:hover {
+        width: 200%;
+    }
+    .spread_wide {
+        width: 150%;
+        overflow: scroll;
+    }
+    .spread_wide:hover {
+        width: 700%;
+    }
+    .spread p {
+        margin: 2px;
+    }
+</style>
+<style id="highlight_style">
+
+    .highlight pre {
+        margin: 0;
+    }
+
+    .highlight span.EOL {
+        color: rgb(135, 135, 135);
+    }
+    
+    .highlight br {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+</style>
