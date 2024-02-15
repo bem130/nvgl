@@ -11,11 +11,12 @@
     </head>
     <body>
         Input
+        <div id="input_vars" style="height: 20px"></div>
         <div id="input" style="height: 20px"></div>
         Output
         <div class="output" style="height: 20px"></div>
         <div class="output" style="height: 100px"></div>
-        <div class="output" style="height: calc(100dvh - 260px)"></div>
+        <div class="output" style="height: calc(100dvh - 280px)"></div>
     </body>
 </html>
 <script>module={}</script>
@@ -23,14 +24,17 @@
 <script>
 
 window.onload = ()=>{
-    if (input.getValue()=="") {input.setValue(`(1+3)*3+2+{"a":{"b":5},1:2}::a::b`)}
+    if (input_vars.getValue()=="") {input_vars.setValue(`{"a":2,"b":3}`)}
+    if (input.getValue()=="") {input.setValue(`(1+a)^b+a^2`)}
 };
 
 function update() {
     let i = input.getValue();
     console.log("input: ",i);
     try {
-        let vars = {"i":10,"Math":Math};
+        let vars = JSON.parse(input_vars.getValue());
+        console.log(vars);
+        vars.Math = Math;
         let parseRet = module.exports.parse(i,{mode:"parse",vars:vars});
         let jsRet = module.exports.parse(i,{mode:"js",vars:vars});
         let evalRet = module.exports.parse(i,{mode:"eval",vars:vars});
@@ -58,6 +62,19 @@ function updateEditorData(editor,data) {
 
 require.config({ paths: { vs: "./node_modules/monaco-editor/min/vs" } });
 
+require(["vs/editor/editor.main"], function () {
+    input_vars = monaco.editor.create(document.querySelector("#input_vars"),{
+        language: "json",
+        readOnly: false,
+        theme: "vs-dark",
+        roundedSelection: true,
+        lineNumbers: "off",
+        automaticLayout: true,
+    });
+    input_vars.getModel().onDidChangeContent((e)=>{
+        update()
+    })
+});
 require(["vs/editor/editor.main"], function () {
     input = monaco.editor.create(document.querySelector("#input"),{
         readOnly: false,
