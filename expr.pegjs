@@ -97,8 +97,12 @@ l8cont
     / s_? {return (l)=>{return l}}
 
 l9
-    = l8
-
+    = l:l8 c:l9cont {return c(l)}
+    / l8
+l9cont
+    = s? "&&" r:l8 c:l9cont {return (l)=>{return c(Res({group:"opr",l:l,r:r,type:"&&",eval:mode=="parse"?((l.eval)==(r.eval)):null},`(${l})&&(${r})`,mode=="eval"?((l)&&(r)):null))}}
+    / s? "||" r:l8 c:l9cont {return (l)=>{return c(Res({group:"opr",l:l,r:r,type:"||",eval:mode=="parse"?((l.eval)||(r.eval)):null},`(${l})||(${r})`,mode=="eval"?((l)||(r)):null))}}
+    / s_? {return (l)=>{return l}}
 
 
 s

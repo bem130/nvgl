@@ -34,7 +34,13 @@ function update() {
     try {
         let vars = JSON.parse(input_vars.getValue());
         console.log(vars);
-        vars.Math = Math;
+        {
+            vars.Math = Math;
+            vars.Number = Number;
+            vars.String = String;
+            vars.parseFloat = parseFloat;
+            vars.parseInt = parseInt;
+        }
         let parseRet = module.exports.parse(i,{mode:"parse",vars:vars});
         let jsRet = module.exports.parse(i,{mode:"js",vars:vars});
         let evalRet = module.exports.parse(i,{mode:"eval",vars:vars});

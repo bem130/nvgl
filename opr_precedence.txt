@@ -13,8 +13,7 @@ some:[some]
 new some(some)
 
 [2]
-some++
-some--
+
 
 [3]
 !some
