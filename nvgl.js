@@ -1,15 +1,16 @@
 var NVGLang = (function () {
-    function NVGLang(filename) {
+    function NVGLang(filename, type) {
         this.indentSpace = 4;
         this.filename = filename;
         {
-            if (typeof require != "undefined") {
+            console.log(type);
+            if (type == "fs") {
                 var fs_1 = require('fs');
                 this.fRead = function (filename) {
                     return fs_1.readFileSync(filename, 'utf8').replace(/\r\n/g, "\n");
                 };
             }
-            else {
+            else if (type == "http") {
                 this.fRead = function (filename) {
                     var hr = new XMLHttpRequest();
                     hr.open("GET", filename, false);
@@ -21,6 +22,9 @@ var NVGLang = (function () {
                         throw "err " + filename;
                     }
                 };
+            }
+            else {
+                throw "err load-type not defined";
             }
         }
         this.code = this.fRead(filename);
@@ -64,7 +68,7 @@ var NVGLang = (function () {
         var i = nodes_span[0];
         var indentstat = false;
         var lineinfo = [];
-        while (i < nodes_span[1]) {
+        while (i <= nodes_span[1]) {
             if (i == 0 || this.code[i - 1] == "\n") {
                 if (indentstat && this.parseTree_checkIndent(i + indent * this.indentSpace)) {
                     lineinfo.push(["indents", i]);

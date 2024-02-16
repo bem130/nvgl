@@ -88,19 +88,19 @@ class NVGLang {
     tokenizerstates:Array<string>;
     indentSpace:number;
     parseTree:NVGL_root;
-    constructor(filename: string) {
+    constructor(filename: string,type: string) {
         this.indentSpace = 4; // インデントのスペースの個数
         this.filename = filename;
         { // Define the fRead function
-            // @ts-ignore
-            if (typeof require!="undefined") {
+            console.log(type)
+            if (type=="fs") {
                 // @ts-ignore
                 const fs:any = require('fs');
                 this.fRead = function (filename): string {
                     return fs.readFileSync(filename,'utf8').replace(/\r\n/g,"\n");
                 }
             }
-            else {
+            else if (type=="http") {
                 this.fRead = function (filename): string {
                     let hr:any = new XMLHttpRequest()
                     hr.open("GET",filename,false);
@@ -112,6 +112,9 @@ class NVGLang {
                         throw "err "+filename;
                     }
                 }
+            }
+            else {
+                throw "err load-type not defined"
             }
         }
         this.code = this.fRead(filename);
@@ -153,7 +156,7 @@ class NVGLang {
         let i:number = nodes_span[0];
         let indentstat:boolean = false; // インデントを受け付けるか
         let lineinfo:Array<["include"|"init"|"timeline"|"obj"|"func"|"indents"|"invalid"|"eos",number]> = [];
-        while (i<nodes_span[1]) {
+        while (i<=nodes_span[1]) {
             if (i==0||this.code[i-1]=="\n") { // 行頭
                 if (indentstat&&this.parseTree_checkIndent(i+indent*this.indentSpace)) { // インデント有り
                     lineinfo.push(["indents",i]);

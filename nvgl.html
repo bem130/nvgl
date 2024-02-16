@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>NVGL Expr - playground</title>
+        <meta charset="utf-8">
+        <script src="./node_modules/monaco-editor/min/vs/loader.js"></script>
+        <meta property="og:title" content="NVGL Expr - playground">
+        <meta property="og:description" content="A playground for expression parsing in the language of project files in my video editing software NVG.">
+        <meta name="application-name" content="NVGL Expr - playground">
+        <meta property="description" content="A playground for expression parsing in the language of project files in my video editing software NVG.">
+    </head>
+    <body>
+        <main>
+            <div id="input" class="spread"></div>
+            <div id="output" class="spread"></div>
+        </main>
+    </body>
+</html>
+<script>module={}</script>
+<script src="nvgl.js"></script>
+<script type="module" src="./expr.js"></script>
+<script>
+
+let sampleCode = `@include
+    Text
+@init
+    return
+@obj text
+    &length
+        return $:l
+    &text 
+        return "text: " + $:t
+    &textcolor
+        return #000
+    &color
+        return #ff5575
+    &getframe
+        return $:t:Text:toImage(30,30,30)
+
+@timeline
+    text(0,"hello world",10)
+    text(10,"hello world",10)
+`
+window.onload = ()=>{input.setValue(sampleCode)};
+
+function update() {
+    nmlt = new NVGLang(`data:text/plain;charset=UTF-8;base64,${btoa(String.fromCharCode.apply(null, new TextEncoder().encode(input.getValue())))}`,"http");
+    try {
+        nmlt.parseTree_root();
+    }
+    catch (e) {
+        console.error(e)
+    }
+    // try {
+    //     nmlt.tokenize();
+    // }
+    // catch (e) {
+    //     console.error(e)
+    // }
+    // try {
+    //     nmlt.parse();
+    //     nmlt.buildAST1();
+    // }
+    // catch (e) {
+    //     console.error(e)
+    //     console.info({"nmlt.ast1i":nmlt.ast1i})
+    //     console.log(nmlt.ast1)
+    // }
+    //console.log(nmlt.tokenarr)
+    //console.table(nmlt.tokenarr)
+    output.setValue(JSON.stringify(nmlt.parseTree,null,4));
+    // showJSON(nmlt.parseTree,document.getElementById("Tree1"),true,["span","embtype"]);
+    // NML_showAsHTML(nmlt.parseTree,document.getElementById("Preview"));
+    //console.log(nmlt)
+}
+
+require.config({ paths: { vs: "./node_modules/monaco-editor/min/vs" } });
+
+require(["vs/editor/editor.main"], function () {
+    input = monaco.editor.create(document.querySelector("#input"),{
+        readOnly: false,
+        theme: "vs-dark",
+        roundedSelection: true,
+        lineNumbers: "on",
+        automaticLayout: true,
+    });
+    input.getModel().onDidChangeContent((e)=>{
+        update()
+    })
+});
+require(["vs/editor/editor.main"], function () {
+    output = monaco.editor.create(document.querySelectorAll("#output")[0],{
+        language: "javascript",
+        readOnly: true,
+        theme: "vs-dark",
+        roundedSelection: true,
+        lineNumbers: "on",
+        automaticLayout: true,
+    });
+});
+</script>
+<style>
+:root {
+    color-scheme: dark;
+    user-select: none;
+}
+
+body {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 5px;
+    padding-left: 10px;
+    margin: 0;
+    width: calc(100dvw - 15px);
+    height: calc(100dvh - 10px);
+    overflow: hidden;
+    background: rgba(0, 106, 255, 0.137);
+}
+
+#input {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.output {
+    margin: 10px;
+}
+
+main {
+    display: flex;
+    height: 100%;
+}
+
+.spread {
+    width: 100%;
+    overflow: scroll;
+}
+.spread:hover {
+    width: 130%;
+}
+
+</style>
