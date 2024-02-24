@@ -77,27 +77,27 @@ function update() {
 require.config({ paths: { vs: "./node_modules/monaco-editor/min/vs" } });
 
 require(["vs/editor/editor.main"], function () {
+    output = monaco.editor.create(document.querySelectorAll("#output")[0],{
+        language: "javascript",
+        readOnly: true,
+        theme: "vs-dark",
+        roundedSelection: true,
+        automaticLayout: true,
+        tabSize: 2,
+    });
+});
+require(["vs/editor/editor.main"], function () {
     input = monaco.editor.create(document.querySelector("#input"),{
         readOnly: false,
         theme: "vs-dark",
         roundedSelection: true,
         lineNumbers: "on",
         automaticLayout: true,
+        tabSize: 4,
     });
     input.getModel().onDidChangeContent((e)=>{
         update()
     })
-});
-require(["vs/editor/editor.main"], function () {
-    output = monaco.editor.create(document.querySelectorAll("#output")[0],{
-        language: "javascript",
-        readOnly: true,
-        theme: "vs-dark",
-        roundedSelection: true,
-        lineNumbers: "on",
-        automaticLayout: true,
-        tabSize: 2,
-    });
 });
 </script>
 <style>

@@ -245,13 +245,13 @@ var NVGLang = (function () {
                         indentstat = true;
                         lineinfo.push(["length", i]);
                     }
-                    else if (this.code.startsWith("&text", i + indent * this.indentSpace)) {
-                        indentstat = true;
-                        lineinfo.push(["text", i]);
-                    }
                     else if (this.code.startsWith("&textcolor", i + indent * this.indentSpace)) {
                         indentstat = true;
                         lineinfo.push(["textcolor", i]);
+                    }
+                    else if (this.code.startsWith("&text", i + indent * this.indentSpace)) {
+                        indentstat = true;
+                        lineinfo.push(["text", i]);
                     }
                     else if (this.code.startsWith("&color", i + indent * this.indentSpace)) {
                         indentstat = true;
