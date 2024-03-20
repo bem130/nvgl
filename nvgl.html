@@ -35,6 +35,7 @@
             <div class="resizer_splitter">
             </div>
             <div class="resizer_content">
+                <button onclick="requestAnimationFrame(update)">Run</button>
                 <div id="graphview" class="mermaid"></div>
             </div>
         </div>
@@ -89,7 +90,7 @@ async function main() {
     {
         const module = await import("./pkg/nvgl.js");
         await module.default();
-        module._start?module._start():module.main?module.main():(()=>{console.error(`Entry point not Found: _start() or main()`)})();
+        module._start?module._start():module.main?module.main():(()=>{console.warn(`Entry point not Found: _start() or main()`)})();
         wasm = module;
     }
     {
@@ -100,6 +101,7 @@ async function main() {
     {
         const module = await import("https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.mjs");
         mermaid = module.default;
+        mermaid.initialize();
     }
 }
 
@@ -125,7 +127,6 @@ let sampleCode = `@include
 `
 
 const defaultEnv =  {
-    zero: 0,
     Math: Math,
     Number: Number,
     String: String,
@@ -135,7 +136,7 @@ const defaultEnv =  {
 
 window.onload = async()=>{
     await main();
-    if (input.getValue()=="") {input.setValue(`Math::sin;`)}
+    if (input.getValue()=="") {input.setValue(`10*5+3*(5-3)>=5*3 && 10%3>2;`)}
     evalOut.setValue(`Ctrl+R to run`);
 };
 function update() {
@@ -164,7 +165,7 @@ function update() {
 async function drawGraphView(obj) {
     const graphview = document.getElementById("graphview");
     graphview.removeAttribute('data-processed')
-    const graphDefinition = {main:'graph TD\n'};
+    const graphDefinition = {main:`%%{init:{'theme':'dark'}}%%\ngraph TD\n`};
     addGraphObj(graphDefinition,obj,"root",0);
     console.log(graphDefinition.main)
     graphview.innerHTML = graphDefinition.main;

@@ -50,7 +50,7 @@ peg::parser! {
                 l:(@) _ "/" _ r:@ { Node::Opr("/".to_string(),Box::new(l), Box::new(r)) }
                 l:(@) _ "%" _ r:@ { Node::Opr("%".to_string(),Box::new(l), Box::new(r)) }
                 --
-                _ "^" _ r:@ { Node::UOpr("^".to_string(), Box::new(r)) }
+                l:@ _ "^" _ r:(@) { Node::Opr("^".to_string(),Box::new(l), Box::new(r)) }
                 --
                 _ "!" _ r:@ { Node::UOpr("!".to_string(), Box::new(r)) }
                 _ "+" _ r:@ { Node::UOpr("+".to_string(), Box::new(r)) }

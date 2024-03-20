@@ -18,28 +18,31 @@ function evalNVGL(expr,scope) {
         case "UOpr":
             const ur = evalNVGL(expr[key][1],scope);
             switch (opr) {
-                case "!":
-                    return !ur;
-                case "+":
-                    return ur;
-                case "-":
-                    return -ur;
-                case "√":
-                    console.log(ur)
-                    return Math.sqrt(ur);
+                case "!": return !ur;
+                case "+": return +ur;
+                case "-": return -ur;
+                case "√": return Math.sqrt(ur);
             }
         case "Opr":
             const l = evalNVGL(expr[key][1],scope);
             const r = evalNVGL(expr[key][2],scope);
             switch (opr) {
-                case "+":
-                    return l+r;
-                case "-":
-                    return l-r;
-                case "*":
-                    return l*r;
-                case "/":
-                    return l/r;
+                case "&&": return l&&r;
+                case "||": return l||r;
+                case "=": return l==r;
+                case "==": return l===r;
+                case "!=": return l!=r;
+                case "!==": return l!==r;
+                case "<": return l<r;
+                case "<=": return l<=r;
+                case ">": return l>r;
+                case ">=": return l>=r;
+                case "+": return l+r;
+                case "-": return l-r;
+                case "*": return l*r;
+                case "/": return l/r;
+                case "%": return l%r;
+                case "^": return l**r;
             }
         case "Expr":
             return evalNVGL(expr[key],scope);
