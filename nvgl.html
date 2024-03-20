@@ -1,25 +1,107 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>NVGL - playground</title>
+        <title>NVGL Expr - playground</title>
         <meta charset="utf-8">
         <script src="./node_modules/monaco-editor/min/vs/loader.js"></script>
-        <meta property="og:title" content="NVGL - playground">
-        <meta property="og:description" content="A playground for parsing the language of project files in my video editing software NVG.">
-        <meta name="application-name" content="NVGL - playground">
-        <meta property="description" content="A playground for parsing the language of project files in my video editing software NVG.">
+        <meta property="og:title" content="NVGL Expr - playground">
+        <meta property="og:description" content="A playground for expression parsing in the language of project files in my video editing software NVG.">
+        <meta name="application-name" content="NVGL Expr - playground">
+        <meta property="description" content="A playground for expression parsing in the language of project files in my video editing software NVG.">
     </head>
     <body>
-        <main>
-            <div id="input" class="spread"></div>
-            <div id="output" class="spread"></div>
-        </main>
+        <div class="resizer_Vcontainer" id="mainarea" data-proportion="4:3">
+            <div class="resizer_content">
+                <div class="resizer_Hcontainer" data-proportion="4:3">
+                    <div class="resizer_content">
+                        <div id="input" class="input"></div>
+                        <button onclick="update()">Run</button>
+                    </div>
+                    <div class="resizer_splitter"></div>
+                    <div class="resizer_content">
+                        <div class="resizer_Vcontainer" data-proportion="4:3">
+                            <div class="resizer_content">
+                                <div class="output"></div>
+                            </div>
+                            <div class="resizer_splitter">
+                            </div>
+                            <div class="resizer_content">
+                                <div class="output"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="resizer_splitter">
+            </div>
+            <div class="resizer_content">
+                <div id="graphview" class="mermaid"></div>
+            </div>
+        </div>
     </body>
 </html>
-<script>module={}</script>
-<script src="nvgl.js"></script>
-<script type="module" src="./expr.js"></script>
 <script>
+function resizer_Vcontainer_addEL (container,framesMin,callback=()=>{}) {
+    container.querySelector(":scope > .resizer_splitter").addEventListener("pointerdown",(e)=>{
+        let resizer = container.querySelector(":scope > .resizer_splitter").getBoundingClientRect();
+        let resizerW = resizer.bottom - resizer.top;
+        let resize = (e)=>{
+            let containerRect = container.getBoundingClientRect();
+            let y = ((n,min,max)=>{if (n<min) {n=min}else if (n>max) {n=max};return n;})(e.y-containerRect.y,framesMin,containerRect.height-resizerW-framesMin);
+            container.querySelectorAll(":scope > .resizer_content")[0].style.flexBasis = `${y}%`;
+            container.querySelectorAll(":scope > .resizer_content")[1].style.flexBasis = `${containerRect.height-resizerW-y}%`;
+            callback();
+        }
+        document.addEventListener("pointermove",resize,false);
+        document.addEventListener("pointerup",()=>{document.removeEventListener("pointermove",resize,false);},false);
+        e.target.setPointerCapture(e.pointerId);
+    });
+    let p = container.dataset["proportion"].split(":").map((x)=>{return Number(x);});
+    container.querySelectorAll(":scope > .resizer_content")[0].style.flexBasis = `${(p[0]*100/(p[0]+p[1]))}%`;
+    container.querySelectorAll(":scope > .resizer_content")[1].style.flexBasis = `${(p[1]*100/(p[0]+p[1]))}%`;
+}
+function resizer_Hcontainer_addEL (container,framesMin,callback=()=>{}) {
+    container.querySelector(":scope > .resizer_splitter").addEventListener("pointerdown",(e)=>{
+        let resizer = container.querySelector(":scope > .resizer_splitter").getBoundingClientRect();
+        let resizerW = resizer.right - resizer.left;
+        let resize = (e)=>{
+            let containerRect = container.getBoundingClientRect();
+            let x = ((n,min,max)=>{if (n<min) {n=min}else if (n>max) {n=max};return n;})(e.x-containerRect.x,framesMin,containerRect.width-resizerW-framesMin);
+            container.querySelectorAll(":scope > .resizer_content")[0].style.flexBasis = `${x}%`;
+            container.querySelectorAll(":scope > .resizer_content")[1].style.flexBasis = `${containerRect.width-resizerW-x}%`;
+            callback();
+        }
+        document.addEventListener("pointermove",resize,false);
+        document.addEventListener("pointerup",()=>{document.removeEventListener("pointermove",resize,false);},false);
+        e.target.setPointerCapture(e.pointerId);
+    });
+    let p = container.dataset["proportion"].split(":").map((x)=>{return Number(x);});
+    container.querySelectorAll(":scope > .resizer_content")[0].style.flexBasis = `${(p[0]*100/(p[0]+p[1]))}%`;
+    container.querySelectorAll(":scope > .resizer_content")[1].style.flexBasis = `${(p[1]*100/(p[0]+p[1]))}%`;
+}
+document.querySelectorAll(".resizer_Vcontainer").forEach((x)=>{resizer_Vcontainer_addEL(x,50);})
+document.querySelectorAll(".resizer_Hcontainer").forEach((x)=>{resizer_Hcontainer_addEL(x,50);})
+</script>
+<script>
+
+var wasm,runtime,mermaid;
+async function main() {
+    {
+        const module = await import("./pkg/nvgl.js");
+        await module.default();
+        module._start?module._start():module.main?module.main():(()=>{console.error(`Entry point not Found: _start() or main()`)})();
+        wasm = module;
+    }
+    {
+        const module = await import("./evalNVGL.js");
+        runtime = {}
+        runtime.eval = module.default;
+    }
+    {
+        const module = await import("https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.mjs");
+        mermaid = module.default;
+    }
+}
 
 let sampleCode = `@include
     Text
@@ -41,64 +123,138 @@ let sampleCode = `@include
     text(0,"hello world",10)
     text(10,"hello world",10)
 `
-window.onload = ()=>{input.setValue(sampleCode)};
 
+const defaultEnv =  {
+    zero: 0,
+    Math: Math,
+    Number: Number,
+    String: String,
+    parseFloat: parseFloat,
+    parseInt: parseInt,
+}
+
+window.onload = async()=>{
+    await main();
+    if (input.getValue()=="") {input.setValue(`Math::sin;`)}
+    evalOut.setValue(`Ctrl+R to run`);
+};
 function update() {
-    nvgl = new NVGLang(`data:text/plain;charset=UTF-8;base64,${btoa(String.fromCharCode.apply(null, new TextEncoder().encode(input.getValue())))}`,"http");
+    let i = input.getValue();
+    //console.log("input: ",i);
+    let parseRet, evalRet
     try {
-        nvgl.parseTree_root();
+        parseRet = JSON.parse(wasm.Parse1(i));
+        updateEditorData(parseOut,JSON.stringify(parseRet,null,4)??parseRet.toString());
     }
     catch (e) {
-        console.error(e)
+        console.error(e);
+        updateEditorData(parseOut,wasm.Parse1(i));
     }
-    // try {
-    //     nmlt.tokenize();
-    // }
-    // catch (e) {
-    //     console.error(e)
-    // }
-    // try {
-    //     nmlt.parse();
-    //     nmlt.buildAST1();
-    // }
-    // catch (e) {
-    //     console.error(e)
-    //     console.info({"nmlt.ast1i":nmlt.ast1i})
-    //     console.log(nmlt.ast1)
-    // }
-    //console.log(nmlt.tokenarr)
-    //console.table(nmlt.tokenarr)
-    output.setValue(JSON.stringify(nvgl.parseTree,null,2));
-    // showJSON(nmlt.parseTree,document.getElementById("Tree1"),true,["span","embtype"]);
-    // NML_showAsHTML(nmlt.parseTree,document.getElementById("Preview"));
-    //console.log(nmlt)
+    drawGraphView(parseRet);
+    try {
+        let evalRet = runtime.eval(parseRet,defaultEnv);
+        updateEditorData(evalOut,JSON.stringify(evalRet,null,4)??evalRet.toString());
+    }
+    catch (e) {
+        console.error(e);
+        updateEditorData(evalOut,JSON.stringify([e.name,e.message,e.location],null,4));
+    }
 }
+
+async function drawGraphView(obj) {
+    const graphview = document.getElementById("graphview");
+    graphview.removeAttribute('data-processed')
+    const graphDefinition = {main:'graph TD\n'};
+    addGraphObj(graphDefinition,obj,"root",0);
+    console.log(graphDefinition.main)
+    graphview.innerHTML = graphDefinition.main;
+    mermaid.init();
+}
+function addGraphObj(txt,obj,name,i) {
+    if (obj==null) {return}
+    const keys = Object.keys(obj);
+    if (keys.length!=1) {console.warn("Invalid AST");}
+    const key = keys[0];
+    const opr = obj[key][0];
+    switch (key) {
+        case "String":
+        case "Number":
+            txt.main += `${name} --${key}--> ${name}_${i}(${obj[key]})\n`;
+            break;
+        case "Var":
+            txt.main += `${name} --var--> ${name}_v${i}(${obj[key]})\n`;
+            break;
+        case "Key":
+            txt.main += `${name} --> ${name}_${i}["Elm"]\n`;
+            addGraphObj(txt,obj[key][0],`${name}_${i}`,i);
+            txt.main += `${name}_${i} --key--> ${name}_${i}_k${i}(${obj[key][1]})\n`;
+            break;
+        case "UOpr":
+            txt.main += `${name} --> ${name}_${i}["${opr}""]\n`;
+            addGraphObj(txt,obj[key][1],`${name}_${i}`,"r");
+            break;
+        case "Opr":
+            txt.main += `${name} --> ${name}_${i}["${opr}"]\n`;
+            addGraphObj(txt,obj[key][1],`${name}_${i}`,"l");
+            addGraphObj(txt,obj[key][2],`${name}_${i}`,"r");
+            break;
+        case "Expr":
+            addGraphObj(txt,obj[key],name,i);
+            break;
+    }
+}
+
+function updateEditorData(editor,data) {
+    editor.setValue(data)
+}
+
 
 require.config({ paths: { vs: "./node_modules/monaco-editor/min/vs" } });
 
 require(["vs/editor/editor.main"], function () {
-    output = monaco.editor.create(document.querySelectorAll("#output")[0],{
-        language: "javascript",
-        readOnly: true,
-        theme: "vs-dark",
-        roundedSelection: true,
-        automaticLayout: true,
-        tabSize: 2,
-    });
-});
-require(["vs/editor/editor.main"], function () {
     input = monaco.editor.create(document.querySelector("#input"),{
+        language: "javascript",
         readOnly: false,
         theme: "vs-dark",
         roundedSelection: true,
         lineNumbers: "on",
         automaticLayout: true,
-        tabSize: 4,
+        fontSize: 20,
     });
-    input.getModel().onDidChangeContent((e)=>{
-        update()
-    })
 });
+require(["vs/editor/editor.main"], function () {
+    evalOut = monaco.editor.create(document.querySelectorAll(".output")[0],{
+        language: "javascript",
+        readOnly: true,
+        theme: "vs-dark",
+        roundedSelection: true,
+        lineNumbers: "off",
+        automaticLayout: true,
+        fontSize: 20,
+    });
+});
+require(["vs/editor/editor.main"], function () {
+    parseOut = monaco.editor.create(document.querySelectorAll(".output")[1],{
+        language: "javascript",
+        readOnly: true,
+        theme: "vs-dark",
+        roundedSelection: true,
+        lineNumbers: "on",
+        automaticLayout: true,
+        fontSize: 10,
+        wordWrap: true,
+    });
+});
+
+
+
+document.addEventListener("keydown",(e)=>{
+    //console.log("keydown",e.keyCode)
+    if (e.keyCode == 82 && e.ctrlKey && !e.shiftKey) {
+        requestAnimationFrame(update);
+        e.preventDefault();
+    }
+},false);
 </script>
 <style>
 :root {
@@ -110,34 +266,81 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    padding: 5px;
-    padding-left: 10px;
+    padding: 0px;
     margin: 0;
-    width: calc(100dvw - 15px);
-    height: calc(100dvh - 10px);
+    width: 100dvw;
+    height: 100dvh;
     overflow: hidden;
     background: rgba(0, 106, 255, 0.137);
 }
 
-#input {
-    border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-.output {
-    margin: 10px;
-}
-
-main {
-    display: flex;
+#mainarea {
+    width: 100%;
     height: 100%;
 }
 
-.spread {
-    width: 100%;
-    overflow: scroll;
-}
-.spread:hover {
-    width: 130%;
+#input {
+    height: 100%;
 }
 
+.output {
+    height: 100%;
+}
+
+#graphview {
+    overflow: auto;
+    height: 100%;
+    padding: 10px;
+}
+
+</style>
+<style>
+
+/* resizer */
+.resizer_Vcontainer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    & > .resizer_content {
+        min-height: 0px;
+        height: 100%;
+        overflow: hidden;
+        padding: 3px;
+    }
+    & > .resizer_splitter {
+        height: 5px;
+        margin: 2px;
+        width: calc(100% - 10px);
+        border-radius: 3px;
+        flex: none;
+        cursor: row-resize;
+        background-color: #7c7c7c;
+    }
+    & > .resizer_splitter:hover {
+        background-color: #acacac;
+    }
+}
+.resizer_Hcontainer {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    & > .resizer_content {
+        min-width: 0px;
+        width: 100%;
+        overflow: hidden;
+        padding: 3px;
+    }
+    & > .resizer_splitter {
+        width: 5px;
+        margin: 2px;
+        height: calc(100% - 10px);
+        border-radius: 3px;
+        flex: none;
+        cursor: col-resize;
+        background-color: #7c7c7c;
+    }
+    & > .resizer_splitter:hover {
+        background-color: #acacac;
+    }
+}
 </style>

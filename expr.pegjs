@@ -81,7 +81,7 @@ l7
     / l6
 l7cont
     = s? "<" r:l6 c:l7cont {return (l)=>{return c(Res({group:"opr",l:l,r:r,type:"<",eval:mode=="parse"?((l.eval)<(r.eval)):null},`(${l})<(${r})`,mode=="eval"?((l)<(r)):null))}}
-    / s? "<" r:l6 c:l7cont {return (l)=>{return c(Res({group:"opr",l:l,r:r,type:"<=",eval:mode=="parse"?((l.eval)<=(r.eval)):null},`(${l})<=(${r})`,mode=="eval"?((l)<=(r)):null))}}
+    / s? "<=" r:l6 c:l7cont {return (l)=>{return c(Res({group:"opr",l:l,r:r,type:"<=",eval:mode=="parse"?((l.eval)<=(r.eval)):null},`(${l})<=(${r})`,mode=="eval"?((l)<=(r)):null))}}
     / s? ">" r:l6 c:l7cont {return (l)=>{return c(Res({group:"opr",l:l,r:r,type:">",eval:mode=="parse"?((l.eval)>(r.eval)):null},`(${l})>(${r})`,mode=="eval"?((l)>(r)):null))}}
     / s? ">=" r:l6 c:l7cont {return (l)=>{return c(Res({group:"opr",l:l,r:r,type:">=",eval:mode=="parse"?((l.eval)>=(r.eval)):null},`(${l})>=(${r})`,mode=="eval"?((l)>=(r)):null))}}
     / s_? {return (l)=>{return l}}

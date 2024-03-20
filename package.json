@@ -10,7 +10,6 @@
   "author": "bem130 <bem130@ymail.ne.jp>",
   "license": "MIT",
   "devDependencies": {
-    "monaco-editor": "^0.46.0",
-    "pegjs": "^0.10.0"
+    "monaco-editor": "^0.46.0"
   }
 }
