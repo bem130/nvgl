@@ -18,16 +18,26 @@ pub enum Node {
     // operation
     Opr(String,Box<Node>,Box<Node>),
     UOpr(String,Box<Node>),
-    // expr
+    // expression
     Expr(Box<Node>),
-    // stat
-    Stat(Box<Node>,Box<Node>)
+    // statement
+    Stat(Box<Node>,Box<Node>),
+    Null(),
+    Scope(),
 }
 peg::parser! {
     grammar parser() for str {
         pub rule stat() -> Node
-            = "return" _ e:expr() _ ";" { Node::Expr(Box::new(e)) }
-            / e:expr() _ ";" { Node::Expr(Box::new(e)) }
+            = "return" _ e:expr() _ ";" { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e)))) }
+            / e:expr() _ ";" { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e)))) }
+            / lv:lval() _ "<:" _ e:expr() _ ";" { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e)))) }
+            / e:expr() _ ":>" _ lv:lval() _ ";" { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e)))) }
+        rule lval() -> Node
+            = precedence! {
+                l:(@) _ "::" _ r:key() { Node::Key(Box::new(l), r) }
+                --
+                b:key() { Node::Key(Box::new(Node::Scope()), b) }
+            }
         rule expr() -> Node
             = precedence! {
                 l:(@) _ "&&" _ r:@ { Node::Opr("&&".to_string(),Box::new(l), Box::new(r)) }

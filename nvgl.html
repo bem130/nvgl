@@ -126,14 +126,6 @@ let sampleCode = `@include
     text(10,"hello world",10)
 `
 
-const defaultEnv =  {
-    Math: Math,
-    Number: Number,
-    String: String,
-    parseFloat: parseFloat,
-    parseInt: parseInt,
-}
-
 window.onload = async()=>{
     await main();
     if (input.getValue()=="") {input.setValue(`10*5+3*(5-3)>=5*3 && 10%3>2;`)}
@@ -153,8 +145,16 @@ function update() {
     }
     drawGraphView(parseRet);
     try {
-        let evalRet = runtime.eval(parseRet,defaultEnv);
-        updateEditorData(evalOut,JSON.stringify(evalRet,null,4)??evalRet.toString());
+        const scope = {
+            Math: Math,
+            Number: Number,
+            String: String,
+            parseFloat: parseFloat,
+            parseInt: parseInt,
+            console: console,
+        };
+        runtime.eval(parseRet,scope);
+        updateEditorData(evalOut,JSON.stringify(scope,null,4));
     }
     catch (e) {
         console.error(e);
@@ -162,7 +162,7 @@ function update() {
     }
 }
 
-async function drawGraphView(obj) {
+function drawGraphView(obj) {
     const graphview = document.getElementById("graphview");
     graphview.removeAttribute('data-processed')
     const graphDefinition = {main:`%%{init:{'theme':'dark'}}%%\ngraph TD\n`};
@@ -202,6 +202,16 @@ function addGraphObj(txt,obj,name,i) {
         case "Expr":
             addGraphObj(txt,obj[key],name,i);
             break;
+        case "Stat":
+            txt.main += `${name} --> ${name}_${i}["Stat"]\n`;
+            addGraphObj(txt,obj[key][1],`${name}_${i}`,"e");
+            switch (Object.keys(obj[key][0])[0]) {
+                case "Null":
+                    return;
+                case "Key":
+                    addGraphObj(txt,obj[key][0].Key[0],`${name}_${i}`,"l");
+                    return;
+            }
     }
 }
 
