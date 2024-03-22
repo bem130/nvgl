@@ -6,86 +6,88 @@ fn _debug(text: String) {
     web_sys::console::log_1(&JsValue::from(text));
 }
 
-#[derive(Debug,Serialize)]
+#[derive(Debug,Serialize,Clone)]
 pub enum Node {
     // literal type
-    Number(f64),
-    Bool(bool),
-    String(String),
+    Number(f64,usize,usize),
+    Bool(bool,usize,usize),
+    String(String,usize,usize),
     // identifier
-    Var(String),
-    Key(Box<Node>,String),
+    Var(String,usize,usize),
+    Key(Box<Node>,String,usize,usize),
     // operation
-    Opr(String,Box<Node>,Box<Node>),
-    UOpr(String,Box<Node>),
+    Opr(String,Box<Node>,Box<Node>,usize,usize),
+    UOpr(String,Box<Node>,usize,usize),
     // expression
-    Expr(Box<Node>),
+    Expr(Box<Node>,usize,usize),
     // statement
-    Stat(Box<Node>,Box<Node>),
+    Stat(Box<Node>,Box<Node>,usize,usize),
     Null(),
     Scope(),
 }
 peg::parser! {
     grammar parser() for str {
         pub rule stat() -> Node
-            = "return" _ e:expr() _ ";" { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e)))) }
-            / e:expr() _ ";" { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e)))) }
-            / lv:lval() _ "<:" _ e:expr() _ ";" { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e)))) }
-            / e:expr() _ ":>" _ lv:lval() _ ";" { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e)))) }
-        rule lval() -> Node
+            = start:position!() "return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
+            / start:position!() startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
+            / start:position!() lv:lval() _ "<:" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
+            / start:position!() startE:position!() e:expr() endE:position!() _ ":>" _ lv:lval() _ ";" end:position!() { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
+        #[cache_left_rec]
+        pub rule lval() -> Node
             = precedence! {
-                l:(@) _ "::" _ r:key() { Node::Key(Box::new(l), r) }
+                start:position!() l:lval() _ "::" _ r:key() end:position!() { Node::Key(Box::new(l), r,start,end) }
                 --
-                b:key() { Node::Key(Box::new(Node::Scope()), b) }
+                b:key() start:position!() end:position!() { Node::Key(Box::new(Node::Scope()),b,start,end) }
             }
+        #[cache_left_rec]
         rule expr() -> Node
             = precedence! {
-                l:(@) _ "&&" _ r:@ { Node::Opr("&&".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "||" _ r:@ { Node::Opr("||".to_string(),Box::new(l), Box::new(r)) }
+                start:position!() l:expr() _ "&&" _ r:expr() end:position!() { Node::Opr("&&".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "||" _ r:expr() end:position!() { Node::Opr("||".to_string(),Box::new(l), Box::new(r),start,end) }
                 --
-                l:(@) _ "=" _ r:@ { Node::Opr("=".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "==" _ r:@ { Node::Opr("==".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "!=" _ r:@ { Node::Opr("!=".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "!==" _ r:@ { Node::Opr("!==".to_string(),Box::new(l), Box::new(r)) }
+                start:position!() l:expr() _ "=" _ r:expr() end:position!() { Node::Opr("=".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "==" _ r:expr() end:position!() { Node::Opr("==".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "!=" _ r:expr() end:position!() { Node::Opr("!=".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "!==" _ r:expr() end:position!() { Node::Opr("!==".to_string(),Box::new(l), Box::new(r),start,end) }
                 --
-                l:(@) _ "<" _ r:@ { Node::Opr("<".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "<=" _ r:@ { Node::Opr("<=".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ ">" _ r:@ { Node::Opr(">".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ ">=" _ r:@ { Node::Opr(">=".to_string(),Box::new(l), Box::new(r)) }
+                start:position!() l:expr() _ "<" _ r:expr() end:position!() { Node::Opr("<".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "<=" _ r:expr() end:position!() { Node::Opr("<=".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ ">" _ r:expr() end:position!() { Node::Opr(">".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ ">=" _ r:expr() end:position!() { Node::Opr(">=".to_string(),Box::new(l), Box::new(r),start,end) }
                 --
-                l:(@) _ "+" _ r:@ { Node::Opr("+".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "-" _ r:@ { Node::Opr("-".to_string(),Box::new(l), Box::new(r)) }
+                start:position!() l:expr() _ "+" _ r:expr() end:position!() { Node::Opr("+".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "-" _ r:expr() end:position!() { Node::Opr("-".to_string(),Box::new(l), Box::new(r),start,end) }
                 --
-                l:(@) _ "*" _ r:@ { Node::Opr("*".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "/" _ r:@ { Node::Opr("/".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "%" _ r:@ { Node::Opr("%".to_string(),Box::new(l), Box::new(r)) }
+                start:position!() l:expr() _ "*" _ r:expr() end:position!() { Node::Opr("*".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "/" _ r:expr() end:position!() { Node::Opr("/".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "%" _ r:expr() end:position!() { Node::Opr("%".to_string(),Box::new(l), Box::new(r),start,end) }
                 --
-                l:@ _ "^" _ r:(@) { Node::Opr("^".to_string(),Box::new(l), Box::new(r)) }
+                start:position!() l:expr() _ "^" _ r:expr() end:position!() { Node::Opr("^".to_string(),Box::new(l), Box::new(r),start,end) }
                 --
-                _ "!" _ r:@ { Node::UOpr("!".to_string(), Box::new(r)) }
-                _ "+" _ r:@ { Node::UOpr("+".to_string(), Box::new(r)) }
-                _ "-" _ r:@ { Node::UOpr("-".to_string(), Box::new(r)) }
-                _ "√" _ r:@ { Node::UOpr("√".to_string(), Box::new(r)) }
+                start:position!() _ "!" _ r:expr() end:position!() { Node::UOpr("!".to_string(), Box::new(r),start,end) }
+                start:position!() _ "+" _ r:expr() end:position!() { Node::UOpr("+".to_string(), Box::new(r),start,end) }
+                start:position!() _ "-" _ r:expr() end:position!() { Node::UOpr("-".to_string(), Box::new(r),start,end) }
+                start:position!() _ "√" _ r:expr() end:position!() { Node::UOpr("√".to_string(), Box::new(r),start,end) }
                 --
-                l:(@) _ "::" _ r:key() { Node::Key(Box::new(l), r) }
-                l:(@) _ ":[" _ r:expr() "]" { Node::Opr(":[]".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "(" _ r:expr() ")" { Node::Opr("()".to_string(),Box::new(l), Box::new(r)) }
-                l:(@) _ "@(" _ r:expr() ")" { Node::Opr("@()".to_string(),Box::new(l), Box::new(r)) }
+                start:position!() l:expr() _ "::" _ r:key() end:position!() { Node::Key(Box::new(l), r,start,end) }
+                start:position!() l:expr() _ ":[" _ r:expr() "]" end:position!() { Node::Opr(":[]".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "(" _ r:expr() ")" end:position!() { Node::Opr("()".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "expr()(" _ r:expr() ")" end:position!() { Node::Opr("expr()()".to_string(),Box::new(l), Box::new(r),start,end) }
                 --
                 "(" _ c:expr() _ ")" { c }
                 n:literal() { n }
                 i:var() { i }
             }
         rule literal() -> Node
-            = n:$(['0'..='9']+"."['0'..='9']+) { (Node::Number(n.parse().unwrap())) }
-            / n:$(['0'..='9']+) { (Node::Number(n.parse().unwrap())) }
-            / n:$("true") { (Node::Bool(true)) }
-            / n:$("false") { (Node::Bool(false)) }
-            / "\"" s:$((("\\\"")/[^'\"'])*) "\"" {Node::String(s.to_string())}
+            = start:position!() n:$(['0'..='9']+"."['0'..='9']+) end:position!() { Node::Number(n.parse().unwrap(),start,end) }
+            / start:position!() n:$(['0'..='9']+) end:position!() { Node::Number(n.parse().unwrap(),start,end) }
+            / start:position!() n:$("true") end:position!()  { Node::Bool(true,start,end) }
+            / start:position!() n:$("false") end:position!()  { Node::Bool(false,start,end) }
+            / start:position!() "\"" s:$((("\\\"")/[^'\"'])*) "\"" end:position!() { Node::String(s.to_string(),start,end) }
         rule var() -> Node
-            = i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) {Node::Var(i.to_string())}
+            = start:position!() i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::Var(i.to_string(),start,end) }
         rule key() -> String
-            = i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) {i.to_string()}
+            = start:position!() i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { i.to_string() }
         rule _()
             = quiet!{ " "* }
     }

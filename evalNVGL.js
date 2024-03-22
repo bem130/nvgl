@@ -12,14 +12,15 @@ function evalNVGL(expr,scope) {
             return scope;
         case "String":
         case "Number":
-            return expr[key];
+        case "Bool":
+            return expr[key][0];
         case "Var":
-            return scope[expr[key]];
+            return scope[expr[key][0]];
         case "Key":
-            const kl = evalNVGL(expr[key][0],scope);
-            return kl[expr[key][1]];
+            const kl = evalNVGL(expr[key][0][0],scope);
+            return kl[expr[key][0][1]];
         case "UOpr":
-            const ur = evalNVGL(expr[key][1],scope);
+            const ur = evalNVGL(expr[key][0][1],scope);
             switch (opr) {
                 case "!": return !ur;
                 case "+": return +ur;
@@ -27,8 +28,8 @@ function evalNVGL(expr,scope) {
                 case "√": return Math.sqrt(ur);
             }
         case "Opr":
-            const l = evalNVGL(expr[key][1],scope);
-            const r = evalNVGL(expr[key][2],scope);
+            const l = evalNVGL(expr[key][0][1],scope);
+            const r = evalNVGL(expr[key][0][2],scope);
             switch (opr) {
                 case "&&": return l&&r;
                 case "||": return l||r;
@@ -48,11 +49,11 @@ function evalNVGL(expr,scope) {
                 case "^": return l**r;
             }
         case "Expr":
-            const exprres = evalNVGL(expr[key],scope);
+            const exprres = evalNVGL(expr[key][0][0],scope);
             console.log("expr res",exprres)
             return exprres;
         case "Stat":
-            const el = evalNVGL(expr[key][1],scope);
+            const el = evalNVGL(expr[key][0][1],scope);
             switch (Object.keys(expr[key][0])[0]) {
                 case "Null":
                     return;
