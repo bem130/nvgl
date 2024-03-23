@@ -9,85 +9,156 @@ fn _debug(text: String) {
 #[derive(Debug,Serialize,Clone)]
 pub enum Node {
     // literal type
-    Number(f64,usize,usize),
-    Bool(bool,usize,usize),
-    String(String,usize,usize),
+    Number(NumberNode),
+    Bool(BoolNode),
+    String(StringNode),
     // identifier
-    Var(String,usize,usize),
-    Key(Box<Node>,String,usize,usize),
+    Var(VarNode),
+    Key(KeyNode),
     // operation
-    Opr(String,Box<Node>,Box<Node>,usize,usize),
-    UOpr(String,Box<Node>,usize,usize),
-    // expression
-    Expr(Box<Node>,usize,usize),
+    Opr(OprNode),
+    UOpr(UOprNode),
     // statement
-    Stat(Box<Node>,Box<Node>,usize,usize),
-    Null(),
+    Stat(StatNode),
+    AssignStat(AssignStatNode),
+    ReturnStat(ReturnStatNode),
     Scope(),
 }
+
+#[derive(Debug,Serialize,Clone)]
+pub struct NumberNode {
+    val: f64,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct BoolNode {
+    val: bool,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct StringNode {
+    val: String,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct VarNode {
+    val: String,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct KeyNode {
+    l: Box<Node>,
+    r: Box<Node>,
+    pos: NodePos,
+}
+
+#[derive(Debug,Serialize,Clone)]
+pub struct OprNode {
+    opr: String,
+    l: Box<Node>,
+    r: Box<Node>,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct UOprNode {
+    opr: String,
+    r: Box<Node>,
+    pos: NodePos,
+}
+
+#[derive(Debug,Serialize,Clone)]
+pub struct ExprNode {
+    expr: Box<Node>,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct StatNode {
+    expr: Box<Node>,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct AssignStatNode {
+    loc: Box<Node>,
+    expr: Box<Node>,
+    pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ReturnStatNode {
+    expr: Box<Node>,
+    pos: NodePos,
+}
+
+
+#[derive(Debug,Serialize,Clone)]
+pub struct NodePos {
+    start: usize,
+    end: usize,
+}
+
 peg::parser! {
     grammar parser() for str {
         pub rule stat() -> Node
-            = start:position!() "return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
-            / start:position!() startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::Stat(Box::new(Node::Null()),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
-            / start:position!() lv:lval() _ "<:" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
-            / start:position!() startE:position!() e:expr() endE:position!() _ ":>" _ lv:lval() _ ";" end:position!() { Node::Stat(Box::new(lv),Box::new(Node::Expr(Box::new(e),startE,endE)),start,end) }
+            = start:position!() "return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::ReturnStat(ReturnStatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
+            / start:position!() e:expr() _ ";" end:position!() { Node::Stat(StatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
+            / start:position!() lv:lval() _ "<:" _ e:expr() _ ";" end:position!() { Node::AssignStat(AssignStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() e:expr() _ ":>" _ lv:lval() _ ";" end:position!() { Node::AssignStat(AssignStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
         #[cache_left_rec]
         pub rule lval() -> Node
             = precedence! {
-                start:position!() l:lval() _ "::" _ r:key() end:position!() { Node::Key(Box::new(l), r,start,end) }
+                start:position!() l:lval() _ "::" _ r:key() end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:lval() _ ":[" _ r:expr() "]" end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                b:key() start:position!() end:position!() { Node::Key(Box::new(Node::Scope()),b,start,end) }
+                b:key() start:position!() end:position!() { Node::Key(KeyNode{l:Box::new(Node::Scope()), r:Box::new(b),pos:NodePos{start:start,end:end}}) }
             }
         #[cache_left_rec]
         rule expr() -> Node
             = precedence! {
-                start:position!() l:expr() _ "&&" _ r:expr() end:position!() { Node::Opr("&&".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "||" _ r:expr() end:position!() { Node::Opr("||".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "&&" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"&&".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "||" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"||".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                start:position!() l:expr() _ "=" _ r:expr() end:position!() { Node::Opr("=".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "==" _ r:expr() end:position!() { Node::Opr("==".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "!=" _ r:expr() end:position!() { Node::Opr("!=".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "!==" _ r:expr() end:position!() { Node::Opr("!==".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "=" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "==" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"==".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "!=" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"!=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "!==" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"!==".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                start:position!() l:expr() _ "<" _ r:expr() end:position!() { Node::Opr("<".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "<=" _ r:expr() end:position!() { Node::Opr("<=".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ ">" _ r:expr() end:position!() { Node::Opr(">".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ ">=" _ r:expr() end:position!() { Node::Opr(">=".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "<" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"<".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "<=" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"<=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ ">" _ r:expr() end:position!() { Node::Opr(OprNode{opr:">".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ ">=" _ r:expr() end:position!() { Node::Opr(OprNode{opr:">=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                start:position!() l:expr() _ "+" _ r:expr() end:position!() { Node::Opr("+".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "-" _ r:expr() end:position!() { Node::Opr("-".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "+" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"+".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "-" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"-".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                start:position!() l:expr() _ "*" _ r:expr() end:position!() { Node::Opr("*".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "/" _ r:expr() end:position!() { Node::Opr("/".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "%" _ r:expr() end:position!() { Node::Opr("%".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "*" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"*".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "/" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"/".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "%" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"%".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                start:position!() l:expr() _ "^" _ r:expr() end:position!() { Node::Opr("^".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "^" _ r:expr() end:position!() { Node::Opr(OprNode{opr:"^".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                start:position!() _ "!" _ r:expr() end:position!() { Node::UOpr("!".to_string(), Box::new(r),start,end) }
-                start:position!() _ "+" _ r:expr() end:position!() { Node::UOpr("+".to_string(), Box::new(r),start,end) }
-                start:position!() _ "-" _ r:expr() end:position!() { Node::UOpr("-".to_string(), Box::new(r),start,end) }
-                start:position!() _ "√" _ r:expr() end:position!() { Node::UOpr("√".to_string(), Box::new(r),start,end) }
+                start:position!() _ "!" _ r:expr() end:position!() { Node::UOpr(UOprNode{opr:"!".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() _ "+" _ r:expr() end:position!() { Node::UOpr(UOprNode{opr:"+".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() _ "-" _ r:expr() end:position!() { Node::UOpr(UOprNode{opr:"-".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() _ "√" _ r:expr() end:position!() { Node::UOpr(UOprNode{opr:"√".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                start:position!() l:expr() _ "::" _ r:key() end:position!() { Node::Key(Box::new(l), r,start,end) }
-                start:position!() l:expr() _ ":[" _ r:expr() "]" end:position!() { Node::Opr(":[]".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "(" _ r:expr() ")" end:position!() { Node::Opr("()".to_string(),Box::new(l), Box::new(r),start,end) }
-                start:position!() l:expr() _ "expr()(" _ r:expr() ")" end:position!() { Node::Opr("expr()()".to_string(),Box::new(l), Box::new(r),start,end) }
+                start:position!() l:expr() _ "::" _ r:key() end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ ":[" _ r:expr() "]" end:position!() { Node::Opr(OprNode{opr:":[]".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "(" _ r:expr() ")" end:position!() { Node::Opr(OprNode{opr:"()".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:expr() _ "expr()(" _ r:expr() ")" end:position!() { Node::Opr(OprNode{opr:"expr()()".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
                 "(" _ c:expr() _ ")" { c }
                 n:literal() { n }
                 i:var() { i }
             }
         rule literal() -> Node
-            = start:position!() n:$(['0'..='9']+"."['0'..='9']+) end:position!() { Node::Number(n.parse().unwrap(),start,end) }
-            / start:position!() n:$(['0'..='9']+) end:position!() { Node::Number(n.parse().unwrap(),start,end) }
-            / start:position!() n:$("true") end:position!()  { Node::Bool(true,start,end) }
-            / start:position!() n:$("false") end:position!()  { Node::Bool(false,start,end) }
-            / start:position!() "\"" s:$((("\\\"")/[^'\"'])*) "\"" end:position!() { Node::String(s.to_string(),start,end) }
+            = start:position!() n:$(['0'..='9']+"."['0'..='9']+) end:position!() { Node::Number(NumberNode{val:n.parse().unwrap(),pos:NodePos{start:start,end:end}}) }
+            / start:position!() n:$(['0'..='9']+) end:position!() { Node::Number(NumberNode{val:n.parse().unwrap(),pos:NodePos{start:start,end:end}}) }
+            / start:position!() n:$("true") end:position!()  { Node::Bool(BoolNode{val:true,pos:NodePos{start:start,end:end}}) }
+            / start:position!() n:$("false") end:position!()  { Node::Bool(BoolNode{val:false,pos:NodePos{start:start,end:end}}) }
+            / start:position!() "\"" s:$((("\\\"")/[^'\"'])*) "\"" end:position!() { Node::String(StringNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule var() -> Node
-            = start:position!() i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::Var(i.to_string(),start,end) }
-        rule key() -> String
-            = start:position!() i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { i.to_string() }
+            = start:position!() i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::Var(VarNode{val:i.to_string(),pos:NodePos{start:start,end:end}}) }
+        rule key() -> Node
+            = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::String(StringNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule _()
             = quiet!{ " "* }
     }
