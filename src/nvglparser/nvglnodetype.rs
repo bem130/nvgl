@@ -6,16 +6,23 @@ pub enum Node {
     Number(NumberNode),
     Bool(BoolNode),
     String(StringNode),
+    Array(ArrayNode),
+    Object(ObjNode),
     // identifier
     Var(VarNode),
     Key(KeyNode),
     // operation
     Opr(OprNode),
     UOpr(UOprNode),
+    // FuncCall
+    FuncCall(FuncCallNode),
+    NewFuncCall(NewFuncCallNode),
     // statement
     Stat(StatNode),
-    AssignStat(AssignStatNode),
     ReturnStat(ReturnStatNode),
+    AStat(AStatNode),
+    MLTAStat(MLTAStatNode),
+    PMLTAStat(PMLTAStatNode),
     Scope(),
 }
 
@@ -32,6 +39,22 @@ pub struct BoolNode {
 #[derive(Debug,Serialize,Clone)]
 pub struct StringNode {
     pub val: String,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ArrayNode {
+    pub val: Vec<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ObjElmNode {
+    pub key: Node,
+    pub val: Node,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ObjNode {
+    pub val: Vec<ObjElmNode>,
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
@@ -59,6 +82,18 @@ pub struct UOprNode {
     pub r: Box<Node>,
     pub pos: NodePos,
 }
+#[derive(Debug,Serialize,Clone)]
+pub struct FuncCallNode {
+    pub func: Box<Node>,
+    pub args: Vec<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct NewFuncCallNode {
+    pub func: Box<Node>,
+    pub args: Vec<Node>,
+    pub pos: NodePos,
+}
 
 #[derive(Debug,Serialize,Clone)]
 pub struct ExprNode {
@@ -71,13 +106,26 @@ pub struct StatNode {
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
-pub struct AssignStatNode {
+pub struct ReturnStatNode {
+    pub expr: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct AStatNode {
     pub loc: Box<Node>,
     pub expr: Box<Node>,
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
-pub struct ReturnStatNode {
+pub struct MLTAStatNode {
+    pub loc: Box<Node>,
+    pub val: String,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct PMLTAStatNode {
+    pub loc: Box<Node>,
+    pub val: String,
     pub expr: Box<Node>,
     pub pos: NodePos,
 }

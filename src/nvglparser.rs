@@ -1,4 +1,5 @@
 mod nvglnodetype;
+use js_sys::Object;
 use nvglnodetype::*;
 
 use std::str;
@@ -11,8 +12,10 @@ peg::parser! {
         pub rule stat() -> Node
             = start:position!() "return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::ReturnStat(ReturnStatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
             / start:position!() e:expr() _ ";" end:position!() { Node::Stat(StatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
-            / start:position!() lv:lval() _ "<:" _ e:expr() _ ";" end:position!() { Node::AssignStat(AssignStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
-            / start:position!() e:expr() _ ":>" _ lv:lval() _ ";" end:position!() { Node::AssignStat(AssignStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() lv:lval() _ "<:" _ e:expr() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() e:expr() _ ":>" _ lv:lval() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() lv:lval() _ "<::" _ val:multilineText() end:position!() { Node::MLTAStat(MLTAStatNode{loc:Box::new(lv),val:val,pos:NodePos{start:start,end:end}}) }
+            / start:position!() lv:lval() _ "<::" _ e:expr() _ val:multilineText() end:position!() { Node::PMLTAStat(PMLTAStatNode{loc:Box::new(lv),val:val,expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
         #[cache_left_rec]
         pub rule lval() -> Node
             = precedence! {
@@ -78,17 +81,29 @@ peg::parser! {
                 start:position!() _ "√" _ r:l2() end:position!() { Node::UOpr(UOprNode{opr:"√".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l2() {c}
             }
+        rule l2() -> Node = l2_1()
         #[cache_left_rec]
-        rule l2() -> Node
+        rule l2_1() -> Node
             = precedence! {
-                start:position!() l:l2() _ "::"      _ r:key()      end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() l:l2() _ ":["      _ r:l1() "]" end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() l:l2() _ "("       _ r:l1() ")" end:position!() { Node::Opr(OprNode{opr:"call".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() l:l2() _ "@()(" _ r:l1() ")" end:position!() { Node::Opr(OprNode{opr:"new".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() a1:l2_1() _ "->" _ f:l1() _ "(" __ a_:expr() ** (_ "," __) __ ")" end:position!() { let mut a = vec![a1];a.extend(a_);Node::FuncCall(FuncCallNode{func:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
+                c:l2_2() {c}
+            }
+        #[cache_left_rec]
+        rule l2_2() -> Node
+            = precedence! {
+                start:position!() f:l2_2() _ "("  __ a:expr() ** (_ "," __) __ ")" end:position!() { Node::FuncCall(FuncCallNode{func:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
+                start:position!() f:l2_2() _ "@(" __ a:expr() ** (_ "," __) __ ")" end:position!() { Node::NewFuncCall(NewFuncCallNode{func:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
                 c:l1() {c}
             }
         #[cache_left_rec]
         rule l1() -> Node
+            = precedence! {
+                start:position!() l:l1() _ "::" _ r:key()      end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:l1() _ ":[" _ r:expr() "]" end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                c:l0() {c}
+            }
+        #[cache_left_rec]
+        rule l0() -> Node
             = precedence! {
                 "(" _ c:expr() _ ")" { c }
                 n:literal() { n }
@@ -101,6 +116,8 @@ peg::parser! {
             / start:position!() n:$("false") end:position!()  { Node::Bool(BoolNode{val:false,pos:NodePos{start:start,end:end}}) }
             / start:position!() "\"" s:$((("\\\"")/[^'\"'])*) "\"" end:position!() { Node::String(StringNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
             / start:position!() c:colorLiteral() end:position!() { Node::String(StringNode{val:c,pos:NodePos{start:start,end:end}}) }
+            / start:position!() "{" __ e:expr() ** (_ "," __) (",")? __ "}" end:position!() { Node::Array(ArrayNode{val:e,pos:NodePos{start:start,end:end}}) }
+            / start:position!() "{" __ e:objelm() ** (_ "," __) (",")? __ "}" end:position!() { Node::Object(ObjNode{val:e,pos:NodePos{start:start,end:end}}) }
         rule colorLiteral() -> String
             = c:colorCode() {c}
         rule colorCode() -> String
@@ -111,12 +128,18 @@ peg::parser! {
         rule colorcodeD1() = (['0'..='9']/['a'..='f']/['A'..='F'])
         rule colorcodeD2() -> String
             = d:$(colorcodeD1() colorcodeD1()) {d.to_string()}
+        rule objelm() -> ObjElmNode
+            = start:position!() k:expr() _ ":" _ v:expr() end:position!() {ObjElmNode{key:k,val:v,pos:NodePos{start:start,end:end}}}
         rule var() -> Node
-            = start:position!() i:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::Var(VarNode{val:i.to_string(),pos:NodePos{start:start,end:end}}) }
+            = start:position!() i:$(((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*/"~"))end:position!() { Node::Var(VarNode{val:i.to_string(),pos:NodePos{start:start,end:end}}) }
         rule key() -> Node
             = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::String(StringNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
-        rule _()
+        rule multilineText() -> String
+            = "\n" _ ":" val:$([^'\n']+) ** ("\n" _ ":") {val.join("\n")}
+        rule _() // space | comment
             = quiet!{ " "* }
+        rule __() // space | LF | comment
+            = quiet!{ ( "\n" / " " )* }
     }
 }
 

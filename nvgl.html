@@ -113,6 +113,16 @@ let sampleCode = `// sample
 @init {
     return
 }
+@item {
+
+    text <::
+        :行の先頭に:が付いてるやつをひとまとめの文字列として扱おうかと
+        :まだちゃんと考えてないからうまく行くか分からんけど
+        :行末にセミコロンを置かせるのが無理になるから
+        :専用の文にするか
+
+    return
+}
 @obj text {
     &length {
         10*5+3*(5-3)>=5*3 && 10%3>2;
@@ -144,7 +154,7 @@ window.addEventListener("load", async()=>{
     evalOut.setValue(`Ctrl+R to run`);
 })
 function update() {
-    let i = input.getValue();
+    let i = input.getValue().replace(/\r\n/g,"\n");
     //console.log("input: ",i);
     let parseResult = JSON.parse(wasm.ParseNVGL(i));
     let parseRet = parseResult.res;
