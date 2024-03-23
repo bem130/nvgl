@@ -106,25 +106,36 @@ async function initnvgl() {
     }
 }
 
-let sampleCode = `@include
+let sampleCode = `// sample
+@include {
     Text
-@init
+}
+@init {
     return
-@obj text
-    &length
-        return $:l
-    &text 
-        return "text: " + $:t
-    &textcolor
+}
+@obj text {
+    &length {
+        10*5+3*(5-3)>=5*3 && 10%3>2;
+        return $::l
+    }
+    &text {
+        return "text: " + $::t
+    }
+    &textcolor {
         return #000
-    &color
+    }
+    &color {
         return #ff5575
-    &getframe
-        return $:t:Text:toImage(30,30,30)
+    }
+    &getframe {
+        return $::t::Text::toImage(30,30,30)
+    }
+}
 
-@timeline
+@timeline {
     text(0,"hello world",10)
     text(10,"hello world",10)
+}
 `
 
 window.addEventListener("load", async()=>{
@@ -135,14 +146,21 @@ window.addEventListener("load", async()=>{
 function update() {
     let i = input.getValue();
     //console.log("input: ",i);
-    let parseRet, evalRet
-    try {
-        parseRet = JSON.parse(wasm.Parse1(i));
-        updateEditorData(parseOut,JSON.stringify(parseRet,null,4)??parseRet.toString());
-    }
-    catch (e) {
-        console.error(e);
-        updateEditorData(parseOut,wasm.Parse1(i));
+    let parseResult = JSON.parse(wasm.ParseNVGL(i));
+    let parseRet = parseResult.res;
+    updateEditorData(parseOut,JSON.stringify(parseRet,null,4)??parseRet.toString());
+    monaco.editor.setModelMarkers(input.getModel(), 'NVGLSyntaxError', []);
+    if (!parseResult.isOk) {
+        let errorMarker = {
+            startLineNumber: parseRet.location.line,
+            endLineNumber: parseRet.location.line,
+            startColumn: parseRet.location.column,
+            endColumn: parseRet.location.column+1,
+            message: `expected: ${parseRet.expected}`,
+            severity: monaco.MarkerSeverity.Error,
+            source: 'NVGL Parser'
+        };
+        monaco.editor.setModelMarkers(input.getModel(), 'NVGLSyntaxError', [errorMarker]);
     }
     nvgl.astgraph(parseRet,i,document.getElementById("graphview"));
     // try {
@@ -174,7 +192,6 @@ require.config({ paths: { vs: "./node_modules/monaco-editor/min/vs" } });
 
 require(["vs/editor/editor.main"], function () {
     input = monaco.editor.create(document.querySelector("#input"),{
-        language: "javascript",
         readOnly: false,
         theme: "vs-dark",
         roundedSelection: true,

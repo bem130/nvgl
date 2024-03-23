@@ -38,7 +38,8 @@ function getLineAndCol(i) {
 
 function drawGraphView(obj,_code,graphview) {
     code = _code;
-    graphview.removeAttribute('data-processed')
+    graphview.removeAttribute('data-processed');
+    graphview.innerHTML = "";
     const graphDefinition = {main:`%%{init:{'theme':'dark'}}%%\ngraph TD\n!(root)\nclick ! call ScopeMarker(0,${code.length})\n`};
     addGraphObj(graphDefinition,obj,"!",0);
     console.log(graphDefinition.main)
