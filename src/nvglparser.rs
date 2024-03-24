@@ -13,18 +13,18 @@ peg::parser! {
             = __ e:rootObj() ** __  __ {e}
         pub rule rootObj() -> Node
             = start:position!() "@includes" _ e:Block() __ end:position!() { Node::Tmp() }
-            / start:position!() "@init" _ e:Block() __ end:position!() { Node::Tmp() }
+            / start:position!() "@init" _ e:Block() __ end:position!() { Node::Init(InitNode{val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "@item" ___ i:key() _ e:Block() __ end:position!() { Node::Tmp() }
-            / start:position!() "@obj" ___ i:key() _ (startE:position!() "{" __ e:objObj() ** __ __ "}" endE:position!() __) end:position!() { Node::Tmp() }
-            / start:position!() "@timeline" _ (startE:position!() "{" __ e:TLObj() ** __ __ "}" endE:position!() __) end:position!() { Node::Tmp() }
+            / start:position!() "@obj" ___ i:key() _ startE:position!() "{" __ e:objObj() ** __ __ "}" endE:position!() __ end:position!() { Node::Tmp() }
+            / start:position!() "@timeline" _ startE:position!() "{" __ e:TLObjStat() ** __ __ "}" endE:position!() __ end:position!() { Node::TLObj(TLObjNode{val:e,pos:NodePos{start:start,end:end}}) }
         pub rule objObj() -> Node
             = start:position!() "&length" _ e:Block() __ end:position!() { Node::Tmp() }
             / start:position!() "&tlelm" _ e:Block() __ end:position!() { Node::Tmp() }
             / start:position!() "&frame" _ e:Block() __ end:position!() { Node::Tmp() }
-        pub rule TLObj() -> Node
-            = start:position!() f:key() _ "("  __ a:expr() ** (_ "," __) __ ")" _ ";" end:position!() { Node::FuncCall(FuncCallNode{func:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
-        pub rule Block() -> Vec<Node>
-            = "{" __ e:(Stat()/Struct()) ** __  __ "}" {e}
+        pub rule TLObjStat() -> Node
+            = start:position!() f:key() _ "("  __ a:objelm() ** (_ "," __) __ ");" end:position!() { Node::TLObjStat(TLObjStatNode{objname:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
+        pub rule Block() -> Node
+            = start:position!() "{" __ e:(Stat()/Struct()) ** __  __ "}" end:position!() { Node::Block(BlockNode{stats:e,pos:NodePos{start:start,end:end}}) }
         pub rule Struct() -> Node
             = start:position!() ("!if" (_ c:expr() _) th:Block() __) (ElseIfBlock() ** (__) __) ("else" _ el:Block()) end:position!() { Node::Tmp() } // if elseif* else
             / start:position!() ("!if" (_ c:expr() _) th:Block() __) (ElseIfBlock() ** (__) __) end:position!() { Node::Tmp() } // if elseif*

@@ -36,6 +36,6 @@ c *#
 }
 
 @timeline {
-    text(0,"hello world",10);
-    text(10,"hello world",10);
+    Text(start:0,text:"hello world",len:10+3);
+    Text(start:10,text:"hello world"+"!",len:10*4);
 }

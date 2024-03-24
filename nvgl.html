@@ -178,7 +178,7 @@ require(["vs/editor/editor.main"], async function () {
         fontSize: 15,
     });
     input.getModel().onDidChangeContent((e)=>{
-    requestAnimationFrame(update); // for debug
+        requestAnimationFrame(update); // for debug
         ScopeMarker(0,0);
     })
     evalOut = monaco.editor.create(document.querySelectorAll(".output")[0],{

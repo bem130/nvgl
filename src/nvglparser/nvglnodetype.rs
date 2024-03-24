@@ -23,6 +23,16 @@ pub enum Node {
     AStat(AStatNode),
     MLTAStat(MLTAStatNode),
     PMLTAStat(PMLTAStatNode),
+    // rootobj
+    // Includes(IncludesNode),
+    // Init(InitNode),
+    // Item(ItemNode),
+    TLObj(TLObjNode),
+    Init(InitNode),
+    TLObjStat(TLObjStatNode),
+    Block(BlockNode),
+    // TimeLine(TimeLineNode),
+    //
     Scope(),
     Tmp(),
 }
@@ -128,6 +138,28 @@ pub struct PMLTAStatNode {
     pub loc: Box<Node>,
     pub val: String,
     pub expr: Box<Node>,
+    pub pos: NodePos,
+}
+
+#[derive(Debug,Serialize,Clone)]
+pub struct InitNode {
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct BlockNode {
+    pub stats: Vec<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct TLObjNode {
+    pub val: Vec<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct TLObjStatNode {
+    pub objname: Box<Node>,
+    pub args: Vec<ObjElmNode>,
     pub pos: NodePos,
 }
 

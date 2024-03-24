@@ -41,7 +41,9 @@ function drawGraphView(obj,_code,graphview) {
     graphview.removeAttribute('data-processed');
     graphview.innerHTML = "";
     const graphDefinition = {main:`%%{init:{'theme':'dark'}}%%\ngraph TD\n!(root)\nclick ! call ScopeMarker(0,${code.length})\n`};
-    addGraphObj(graphDefinition,obj,"!",0);
+    for (let j in obj) {
+        addGraphObj(graphDefinition,obj[j],"!",`${j}_`);
+    }
     console.log(graphDefinition.main)
     graphview.innerHTML = graphDefinition.main;
     mermaid.init();
@@ -56,6 +58,7 @@ function addGraphObj(txt,obj,name,i) {
     switch (key) {
         case "String":
         case "Number":
+        case "Id":
             txt.main += `${name} --${key}--> ${name}${i}(${val.val})\n`;
             break;
         case "Var":
@@ -75,8 +78,39 @@ function addGraphObj(txt,obj,name,i) {
             console.log(obj,key)
             addGraphObj(txt,val.expr,`${name}${i}`,"e");
             break;
+        case "Block":
+            txt.main += `${name} --> ${name}${i}["${key}"]\n`;
+            console.log(obj,key)
+            addGraphObj(txt,val.val,`${name}${i}`,"i");
+            break;
+        case "Init":
+            txt.main += `${name} --> ${name}${i}["Init()"]\n`;
+            console.log(obj,key)
+            addGraphObj(txt,val.val,`${name}${i}`,"i");
+            break;
+        case "TLObj":
+            txt.main += `${name} --> ${name}${i}["TimeLine"]\n`;
+            console.log(obj,key)
+            for (let j in val.val) {
+                addGraphObj(txt,val.val[j],`${name}${i}`,`${j}_`);
+            }
+            break;
+        case "TLObjStat":
+            console.log("jfowjfoa",name)
+            txt.main += `${name} --> ${name}${i}[["Object()"]]\n`;
+            console.log(obj,key)
+            addGraphObj(txt,val.objname,`${name}${i}`,"l");
+            txt.main += `${name}${i} --> ${name}${i}a["Args"]\n`;
+            for (let j in val.args) {
+                txt.main += `${name}${i}a --> ${name}${i}a${j}_["arg ${(Number(j)+1)}"]\n`;
+                addGraphObj(txt,val.args[j].key,`${name}${i}a${j}_`,`l`);
+                addGraphObj(txt,val.args[j].val,`${name}${i}a${j}_`,`r`);
+            }
+            break;
     }
-    txt.main += `click ${name}${i} call ScopeMarker(${val.pos.start},${val.pos.end})\n`;
+    if (val.pos!=null) {
+        txt.main += `click ${name}${i} call ScopeMarker(${val.pos.start},${val.pos.end})\n`;
+    }
 }
 
 
