@@ -30,15 +30,21 @@ peg::parser! {
             / start:position!() ("!if" (_ c:expr() _) th:Block() __) (ElseIfBlock() ** (__) __) end:position!() { Node::Tmp() } // if elseif*
             / start:position!() ("!while" (_ c:expr() _) th:Block()) end:position!() { Node::Tmp() } // while
             / start:position!() ("!times" (_ c:expr() _) th:Block()) end:position!() { Node::Tmp() } // times
+            / b:Block() { Node::Tmp() }
         pub rule ElseIfBlock() -> Node
             = ("elif"/"elseif"/"else if") (_ c:expr() _) th:Block() { Node::Tmp() }
         pub rule Stat() -> Node
-            = start:position!() "!return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::ReturnStat(ReturnStatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
-            / start:position!() e:expr() _ ";" end:position!() { Node::Stat(StatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
-            / start:position!() lv:lval() _ "<:" _ e:expr() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
-            / start:position!() e:expr() _ ":>" _ lv:lval() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
-            / start:position!() lv:lval() _ "<::" _ val:multilineText() end:position!() { Node::MLTAStat(MLTAStatNode{loc:Box::new(lv),val:val,pos:NodePos{start:start,end:end}}) }
-            / start:position!() lv:lval() _ "<::" _ e:expr() _ val:multilineText() end:position!() { Node::PMLTAStat(PMLTAStatNode{loc:Box::new(lv),val:val,expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            = precedence! {
+                start:position!() "!return" _ ";" end:position!() { Node::Tmp() }
+                start:position!() "!break" _ ";" end:position!() { Node::Tmp() }
+                start:position!() "!continue" _ ";" end:position!() { Node::Tmp() }
+                start:position!() "!return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::ReturnStat(ReturnStatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
+                start:position!() e:expr() _ ";" end:position!() { Node::Stat(StatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
+                start:position!() lv:lval() _ "<:" _ e:expr() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+                start:position!() e:expr() _ ":>" _ lv:lval() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+                start:position!() lv:lval() _ "<::" _ val:multilineText() end:position!() { Node::MLTAStat(MLTAStatNode{loc:Box::new(lv),val:val,pos:NodePos{start:start,end:end}}) }
+                start:position!() lv:lval() _ "<::" _ e:expr() _ val:multilineText() end:position!() { Node::PMLTAStat(PMLTAStatNode{loc:Box::new(lv),val:val,expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            }
         #[cache_left_rec]
         pub rule lval() -> Node
             = precedence! {
