@@ -9,7 +9,7 @@ pub enum Node {
     Array(ArrayNode),
     Object(ObjNode),
     // identifier
-    Var(VarNode),
+    Id(IdNode),
     Key(KeyNode),
     // operation
     Opr(OprNode),
@@ -24,6 +24,7 @@ pub enum Node {
     MLTAStat(MLTAStatNode),
     PMLTAStat(PMLTAStatNode),
     Scope(),
+    Tmp(),
 }
 
 #[derive(Debug,Serialize,Clone)]
@@ -58,7 +59,7 @@ pub struct ObjNode {
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
-pub struct VarNode {
+pub struct IdNode {
     pub val: String,
     pub pos: NodePos,
 }

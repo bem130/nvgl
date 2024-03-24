@@ -1,0 +1,38 @@
+# sample
+@includes {
+    Text;
+}
+#*
+@init {
+    !return;
+}
+*#
+@item text {
+#* abc *#
+#* ab
+c *#
+    text <::
+        :行の先頭に:が付いてるやつをひとまとめの文字列として扱おうかと
+        :まだちゃんと考えてないからうまく行くか分からんけど
+        :行末にセミコロンを置かせるのが無理になるから
+        :専用の文にするか
+
+    !return text;
+}
+@obj text {
+    &length {
+        10*5+3*(5-3)>=5*3 && 10%3>2;
+        !return l;
+    }
+    &tlelm {
+        !return {text:"text: " + t,color:#ff5575,textcolor:#000};
+    }
+    &frame {
+        !return t->Text::toImage(30,30,30);
+    }
+}
+
+@timeline {
+    text(0,"hello world",10);
+    text(10,"hello world",10);
+}

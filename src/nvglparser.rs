@@ -9,8 +9,31 @@ use serde::Serialize;
 
 peg::parser! {
     pub grammar parser() for str {
-        pub rule stat() -> Node
-            = start:position!() "return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::ReturnStat(ReturnStatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
+        pub rule root() -> Vec<Node>
+            = __ e:rootObj() ** __  __ {e}
+        pub rule rootObj() -> Node
+            = start:position!() "@includes" _ e:Block() __ end:position!() { Node::Tmp() }
+            / start:position!() "@init" _ e:Block() __ end:position!() { Node::Tmp() }
+            / start:position!() "@item" ___ i:key() _ e:Block() __ end:position!() { Node::Tmp() }
+            / start:position!() "@obj" ___ i:key() _ (startE:position!() "{" __ e:objObj() ** __ __ "}" endE:position!() __) end:position!() { Node::Tmp() }
+            / start:position!() "@timeline" _ (startE:position!() "{" __ e:TLObj() ** __ __ "}" endE:position!() __) end:position!() { Node::Tmp() }
+        pub rule objObj() -> Node
+            = start:position!() "&length" _ e:Block() __ end:position!() { Node::Tmp() }
+            / start:position!() "&tlelm" _ e:Block() __ end:position!() { Node::Tmp() }
+            / start:position!() "&frame" _ e:Block() __ end:position!() { Node::Tmp() }
+        pub rule TLObj() -> Node
+            = start:position!() f:key() _ "("  __ a:expr() ** (_ "," __) __ ")" _ ";" end:position!() { Node::FuncCall(FuncCallNode{func:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
+        pub rule Block() -> Vec<Node>
+            = "{" __ e:(Stat()/Struct()) ** __  __ "}" {e}
+        pub rule Struct() -> Node
+            = start:position!() ("!if" (_ c:expr() _) th:Block() __) (ElseIfBlock() ** (__) __) ("else" _ el:Block()) end:position!() { Node::Tmp() } // if elseif* else
+            / start:position!() ("!if" (_ c:expr() _) th:Block() __) (ElseIfBlock() ** (__) __) end:position!() { Node::Tmp() } // if elseif*
+            / start:position!() ("!while" (_ c:expr() _) th:Block()) end:position!() { Node::Tmp() } // while
+            / start:position!() ("!times" (_ c:expr() _) th:Block()) end:position!() { Node::Tmp() } // times
+        pub rule ElseIfBlock() -> Node
+            = ("elif"/"elseif"/"else if") (_ c:expr() _) th:Block() { Node::Tmp() }
+        pub rule Stat() -> Node
+            = start:position!() "!return" _ startE:position!() e:expr() endE:position!() _ ";" end:position!() { Node::ReturnStat(ReturnStatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
             / start:position!() e:expr() _ ";" end:position!() { Node::Stat(StatNode{expr:Box::new(e),pos:NodePos{start:start,end:end}})}
             / start:position!() lv:lval() _ "<:" _ e:expr() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() e:expr() _ ":>" _ lv:lval() _ ";" end:position!() { Node::AStat(AStatNode{loc:Box::new(lv),expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
@@ -131,15 +154,21 @@ peg::parser! {
         rule objelm() -> ObjElmNode
             = start:position!() k:expr() _ ":" _ v:expr() end:position!() {ObjElmNode{key:k,val:v,pos:NodePos{start:start,end:end}}}
         rule var() -> Node
-            = start:position!() i:$(((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*/"~"))end:position!() { Node::Var(VarNode{val:i.to_string(),pos:NodePos{start:start,end:end}}) }
+            = start:position!() s:$(((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*)/"~") end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule key() -> Node
-            = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::String(StringNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
+            = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule multilineText() -> String
             = "\n" _ ":" val:$([^'\n']+) ** ("\n" _ ":") {val.join("\n")}
-        rule _() // space | comment
+        rule lineComment()
+            = quiet!{ "#" [^'\n']+ }
+        rule blockComment()
+            = quiet!{ "#*" $(!"*#" ([_]/"\n"))* "*#" }
+        rule _() // space
             = quiet!{ " "* }
+        rule ___() // space needed
+            = quiet!{ " "+ }
         rule __() // space | LF | comment
-            = quiet!{ ( "\n" / " " )* }
+            = quiet!{ ( "\n" / " " / blockComment() / lineComment())* }
     }
 }
 
@@ -159,7 +188,7 @@ pub struct Location {
 #[derive(Debug,Serialize,Clone)]
 pub struct OkResult {
     pub isOk: bool,
-    pub res: Node,
+    pub res: Vec<Node>,
 }
 #[derive(Debug,Serialize,Clone)]
 pub struct ErrResult {
@@ -168,7 +197,7 @@ pub struct ErrResult {
 }
 
 pub fn parseNVGL(input: &str) -> String {
-    match parser::stat(input) {
+    match parser::root(input) {
         Ok(val) =>{
             return serde_json::to_string(&OkResult{isOk:true,res:val}).unwrap();
         }
