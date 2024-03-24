@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Open nvgl.html",
+            "url": "http://127.0.0.1:6001/nvgl.html",
+            "webRoot": "${workspaceFolder}"
+        }
+    ]
+}
