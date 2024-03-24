@@ -1,8 +1,8 @@
 var mermaid;
 var code = "";
 
-async function loadmodule() {
-    const module = await import("https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.mjs");
+async function loadmodule(url) {
+    const module = await import(url);
     mermaid = module.default;
     mermaid.initialize({
         securityLevel: "loose",

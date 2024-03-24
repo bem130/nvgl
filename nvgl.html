@@ -85,22 +85,22 @@ document.querySelectorAll(".resizer_Hcontainer").forEach((x)=>{resizer_Hcontaine
 </script>
 <script>
 
-var wasm,nvgl,ScopeMarker;
+var nvgl,ScopeMarker;
 async function initnvgl() {
+    nvgl = {}
     {
         const module = await import("./pkg/nvgl.js");
         await module.default();
         module._start?module._start():module.main?module.main():(()=>{console.warn(`Entry point not Found: _start() or main()`)})();
-        wasm = module;
+        nvgl.parser = module;
     }
-    nvgl = {}
     {
         const module = await import("./evalNVGL.js");
         nvgl.eval = module.default;
     }
     {
         const module = await import("./astgraphNVGL.js");
-        await module.init();
+        await module.init("https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.esm.mjs");
         nvgl.astgraph = module.default;
         ScopeMarker = module.ScopeMarker;
     }
@@ -116,7 +116,7 @@ window.addEventListener("load", async()=>{
 function update() {
     let i = input.getValue().replace(/\r\n/g,"\n");
     //console.log("input: ",i);
-    let parseResult = JSON.parse(wasm.ParseNVGL(i));
+    let parseResult = JSON.parse(nvgl.parser.ParseNVGL(i));
     let parseRet = parseResult.res;
     updateEditorData(parseOut,JSON.stringify(parseRet,null,4)??parseRet.toString());
     console.log(parseRet);
