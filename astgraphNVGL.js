@@ -61,11 +61,19 @@ function addGraphObj(txt,obj,name,i) {
         case "Id":
             txt.main += `${name} --${key}--> ${name}${i}(${val.val})\n`;
             break;
+        case "Scope":
+            txt.main += `${name} --> ${name}${i}(Scope)\n`;
+            break;
         case "Var":
             txt.main += `${name} --var--> ${name}${i}(${val})\n`;
             break;
         case "UOpr":
             txt.main += `${name} --> ${name}${i}["${val.opr}""]\n`;
+            addGraphObj(txt,val.r,`${name}${i}`,"r");
+            break;
+        case "Key":
+            txt.main += `${name} --> ${name}${i}["key"]\n`;
+            addGraphObj(txt,val.l,`${name}${i}`,"l");
             addGraphObj(txt,val.r,`${name}${i}`,"r");
             break;
         case "Opr":
@@ -78,10 +86,46 @@ function addGraphObj(txt,obj,name,i) {
             console.log(obj,key)
             addGraphObj(txt,val.expr,`${name}${i}`,"e");
             break;
-        case "Block":
-            txt.main += `${name} --> ${name}${i}["${key}"]\n`;
+        case "AStat":
+            txt.main += `${name} --> ${name}${i}["AStat"]\n`;
             console.log(obj,key)
-            addGraphObj(txt,val.val,`${name}${i}`,"i");
+            addGraphObj(txt,val.loc,`${name}${i}`,"l");
+            addGraphObj(txt,val.expr,`${name}${i}`,"e");
+            break;
+        case "MLTAStat":
+            txt.main += `${name} --> ${name}${i}["MLTAStat"]\n`;
+            console.log(obj,key)
+            addGraphObj(txt,val.loc,`${name}${i}`,"l");
+            txt.main += `${name}${i} --val--> ${name}${i}v(${val.val})\n`;
+            break;
+        case "Block":
+            console.log(obj,key)
+            for (let j in val.stats) {
+                addGraphObj(txt,val.stats[j],`${name}`,`${j}_`);
+            }
+            break;
+        case "If":
+            txt.main += `${name} --> ${name}${i}["If"]\n`;
+            console.log(obj,key)
+            for (let j in val.val) {
+                txt.main += `${name}${i} --> ${name}${i}${j}_["IfElm ${Number(j)+1}"]\n`;
+                addGraphObj(txt,val.val[j].cond,`${name}${i}${j}_`,`l`);
+                addGraphObj(txt,val.val[j].block,`${name}${i}${j}_`,`r`);
+            }
+            break;
+        case "Includes":
+            txt.main += `${name} --> ${name}${i}["Includes"]\n`;
+            console.log(obj,key)
+            addGraphObj(txt,val.val,`${name}${i}`,"b");
+            break;
+        case "IncludesBlock":
+            console.log(obj,key)
+            for (let j in val.val) {
+                txt.main += `${name} --> ${name}${i}${j}_["Include ${Number(j)+1}"]\n`;
+                addGraphObj(txt,val.val[j].module,`${name}${i}${j}_`,`${j}l_`);
+                addGraphObj(txt,val.val[j].name,`${name}${i}${j}_`,`${j}r_`);
+                console.log("includes",val.val[j])
+            }
             break;
         case "Init":
             txt.main += `${name} --> ${name}${i}["Init()"]\n`;

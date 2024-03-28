@@ -11,29 +11,42 @@ peg::parser! {
     pub grammar parser() for str {
         pub rule root() -> Vec<Node>
             = __ e:rootObj() ** __  __ {e}
-        pub rule rootObj() -> Node
-            = start:position!() "@includes" _ e:Block() __ end:position!() { Node::Tmp() }
+        rule rootObj() -> Node
+            = start:position!() "@includes" _ b:IncludesBlock() __ end:position!() { Node::Includes(IncludesNode{val:Box::new(b),pos:NodePos{start:start,end:end}}) }
             / start:position!() "@init" _ e:Block() __ end:position!() { Node::Init(InitNode{val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "@item" ___ i:key() _ e:Block() __ end:position!() { Node::Tmp() }
             / start:position!() "@obj" ___ i:key() _ startE:position!() "{" __ e:objObj() ** __ __ "}" endE:position!() __ end:position!() { Node::Tmp() }
             / start:position!() "@timeline" _ startE:position!() "{" __ e:TLObjStat() ** __ __ "}" endE:position!() __ end:position!() { Node::TLObj(TLObjNode{val:e,pos:NodePos{start:start,end:end}}) }
-        pub rule objObj() -> Node
-            = start:position!() "&length" _ e:Block() __ end:position!() { Node::Tmp() }
+        rule objObj() -> Node
+            = start:position!() "&init" _ e:Block() __ end:position!() { Node::Tmp() }
+            / start:position!() "&length" _ e:Block() __ end:position!() { Node::Tmp() }
             / start:position!() "&tlelm" _ e:Block() __ end:position!() { Node::Tmp() }
             / start:position!() "&frame" _ e:Block() __ end:position!() { Node::Tmp() }
-        pub rule TLObjStat() -> Node
+        rule TLObjStat() -> Node
             = start:position!() f:key() _ "("  __ a:objelm() ** (_ "," __) __ ");" end:position!() { Node::TLObjStat(TLObjStatNode{objname:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
-        pub rule Block() -> Node
+        rule Block() -> Node
             = start:position!() "{" __ e:(Stat()/Struct()) ** __  __ "}" end:position!() { Node::Block(BlockNode{stats:e,pos:NodePos{start:start,end:end}}) }
-        pub rule Struct() -> Node
-            = start:position!() ("!if" (_ c:expr() _) th:Block() __) (ElseIfBlock() ** (__) __) ("else" _ el:Block()) end:position!() { Node::Tmp() } // if elseif* else
-            / start:position!() ("!if" (_ c:expr() _) th:Block() __) (ElseIfBlock() ** (__) __) end:position!() { Node::Tmp() } // if elseif*
-            / start:position!() ("!while" (_ c:expr() _) th:Block()) end:position!() { Node::Tmp() } // while
-            / start:position!() ("!times" (_ c:expr() _) th:Block()) end:position!() { Node::Tmp() } // times
+        rule IncludesBlock() -> Node
+            = start:position!() "{" __ e:includeselm() ** (_ "," __) (",")? __ "}" end:position!() { Node::IncludesBlock(IncludesBlockNode{val:e,pos:NodePos{start:start,end:end}}) }
+        rule includeselm() -> IncludesElmNode
+            = start:position!() k:includekey() _ "as" _ v:key() end:position!() {IncludesElmNode{module:Node::Key(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
+            / start:position!() k:includekey() end:position!() {IncludesElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
+        #[cache_left_rec]
+        rule includekey() -> KeyNode
+            = precedence! {
+                start:position!() l:includekey() _ "::" _ r:key() end:position!() { KeyNode{l:Box::new(Node::Key(l)), r:Box::new(r),pos:NodePos{start:start,end:end}} }
+                --
+                b:key() start:position!() end:position!() { KeyNode{l:Box::new(Node::Scope()), r:Box::new(b),pos:NodePos{start:start,end:end}} }
+            }
+        rule Struct() -> Node
+            = start:position!() "!if" _ c:expr() _ th:Block() endif:position!() __ v:ElseIfBlock() ** __ __ startelse:position!() "else" endelkw:position!() _ el:Block() end:position!() { let mut a = vec![IfElmNode{cond:c,block:th,pos:NodePos{start:start,end:endif}}];a.extend(v);a.push(IfElmNode{cond:Node::Bool(BoolNode{val:true,pos:NodePos{start:startelse,end:endelkw}}),block:el,pos:NodePos{start:startelse,end:end}});Node::If(IfNode{val:a,pos:NodePos{start:start,end:end}}) } // if elseif* else
+            / start:position!() "!if" _ c:expr() _ th:Block() endif:position!() __ v:ElseIfBlock() ** __ __ end:position!() { let mut a = vec![IfElmNode{cond:c,block:th,pos:NodePos{start:start,end:endif}}];a.extend(v);Node::If(IfNode{val:a,pos:NodePos{start:start,end:end}}) } // if elseif*
+            / start:position!() "!while" _ c:expr() _ th:Block() end:position!() { Node::Tmp() } // while
+            / start:position!() "!times" _ c:expr() _ th:Block() end:position!() { Node::Tmp() } // times
             / b:Block() { Node::Tmp() }
-        pub rule ElseIfBlock() -> Node
-            = ("elif"/"elseif"/"else if") (_ c:expr() _) th:Block() { Node::Tmp() }
-        pub rule Stat() -> Node
+        rule ElseIfBlock() -> IfElmNode
+            = start:position!() ("elif"/"elseif"/"else if") _ c:expr() _ th:Block() end:position!() { IfElmNode{cond:c,block:th,pos:NodePos{start:start,end:end}} }
+        rule Stat() -> Node
             = precedence! {
                 start:position!() "!return" _ ";" end:position!() { Node::Tmp() }
                 start:position!() "!break" _ ";" end:position!() { Node::Tmp() }
@@ -46,7 +59,7 @@ peg::parser! {
                 start:position!() lv:lval() _ "<::" _ e:expr() _ val:multilineText() end:position!() { Node::PMLTAStat(PMLTAStatNode{loc:Box::new(lv),val:val,expr:Box::new(e),pos:NodePos{start:start,end:end}}) }
             }
         #[cache_left_rec]
-        pub rule lval() -> Node
+        rule lval() -> Node
             = precedence! {
                 start:position!() l:lval() _ "::" _ r:key() end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:lval() _ ":[" _ r:expr() "]" end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }

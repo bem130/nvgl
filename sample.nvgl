@@ -1,6 +1,6 @@
 # sample
 @includes {
-    Text;
+    Text, Image::Bitmap as img
 }
 #*
 @init {
@@ -8,6 +8,21 @@
 }
 *#
 @init {
+    text <::
+        :行の先頭に:が付いてるやつをひとまとめの文字列として扱おうかと
+        :まだちゃんと考えてないからうまく行くか分からんけど
+        :行末にセミコロンを置かせるのが無理になるから
+        :専用の文にするか
+    !if (10=2) {
+        a <: 15-5*1;
+    }
+    else if (5-2=4) {
+        a <: 10;
+    }
+    else {
+        a <: 2*3;
+    }
+    10-5*2;
     !return;
 }
 @item text {
@@ -23,6 +38,9 @@ c *#
     !return text;
 }
 @obj text {
+    &init {
+        !return;
+    }
     &length {
         10*5+3*(5-3)>=5*3 && 10%3>2;
         !return l;

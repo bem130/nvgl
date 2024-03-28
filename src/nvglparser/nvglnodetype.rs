@@ -25,6 +25,8 @@ pub enum Node {
     PMLTAStat(PMLTAStatNode),
     // rootobj
     // Includes(IncludesNode),
+    Includes(IncludesNode),
+    IncludesBlock(IncludesBlockNode),
     // Init(InitNode),
     // Item(ItemNode),
     TLObj(TLObjNode),
@@ -32,6 +34,8 @@ pub enum Node {
     TLObjStat(TLObjStatNode),
     Block(BlockNode),
     // TimeLine(TimeLineNode),
+    // structure
+    If(IfNode),
     //
     Scope(),
     Tmp(),
@@ -162,6 +166,39 @@ pub struct TLObjStatNode {
     pub args: Vec<ObjElmNode>,
     pub pos: NodePos,
 }
+
+#[derive(Debug,Serialize,Clone)]
+pub struct IncludesNode {
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct IncludesElmNode {
+    pub module: Node,
+    pub name: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct IncludesBlockNode {
+    pub val: Vec<IncludesElmNode>,
+    pub pos: NodePos,
+}
+
+
+#[derive(Debug,Serialize,Clone)]
+pub struct IfElmNode {
+    pub cond: Node,
+    pub block: Node,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct IfNode {
+    pub val: Vec<IfElmNode>,
+    pub pos: NodePos,
+}
+
+
+
 
 
 #[derive(Debug,Serialize,Clone)]
