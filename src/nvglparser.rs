@@ -73,6 +73,8 @@ peg::parser! {
             = precedence! {
                 start:position!() l:l9() _ "&&" _ r:l8() end:position!() { Node::Opr(OprNode{opr:"&&".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l9() _ "||" _ r:l8() end:position!() { Node::Opr(OprNode{opr:"||".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("and"/"&&") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"&&".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("or"/"||") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"||".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l8() {c}
             }
         #[cache_left_rec]
@@ -82,6 +84,10 @@ peg::parser! {
                 start:position!() l:l8() _ "=="  _ r:l7() end:position!() { Node::Opr(OprNode{opr:"==".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l8() _ "!="  _ r:l7() end:position!() { Node::Opr(OprNode{opr:"!=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l8() _ "!==" _ r:l7() end:position!() { Node::Opr(OprNode{opr:"!==".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("eq"/"=") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("equ"/"==") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"==".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("neq"/"!=") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"!=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("nequ"/"!==") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"!==".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l7() {c}
             }
         #[cache_left_rec]
@@ -91,6 +97,10 @@ peg::parser! {
                 start:position!() l:l7() _ "<=" _ r:l6() end:position!() { Node::Opr(OprNode{opr:"<=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l7() _ ">"  _ r:l6() end:position!() { Node::Opr(OprNode{opr:">".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l7() _ ">=" _ r:l6() end:position!() { Node::Opr(OprNode{opr:">=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("<"/"lt")_sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"<".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("<="/"le") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"<=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ (">"/"gt")_sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:">".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ (">="/"ge") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:">=".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l6() {c}
             }
         #[cache_left_rec]
@@ -98,6 +108,8 @@ peg::parser! {
             = precedence! {
                 start:position!() l:l6() _ "+" _ r:l5() end:position!() { Node::Opr(OprNode{opr:"+".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l6() _ "-" _ r:l5() end:position!() { Node::Opr(OprNode{opr:"-".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("add"/"+") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"+".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("sub"/"-") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"-".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l5() {c}
             }
         #[cache_left_rec]
@@ -106,21 +118,29 @@ peg::parser! {
                 start:position!() l:l5() _ "*" _ r:l4() end:position!() { Node::Opr(OprNode{opr:"*".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l5() _ "/" _ r:l4() end:position!() { Node::Opr(OprNode{opr:"/".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() l:l5() _ "%" _ r:l4() end:position!() { Node::Opr(OprNode{opr:"%".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("mul"/"*") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"*".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("div"/"/") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"/".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("mod"/"%") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"%".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l4() {c}
             }
         #[cache_left_rec]
         rule l4() -> Node
             = precedence! {
                 start:position!() l:l3() _ "^" _ r:l4() end:position!() { Node::Opr(OprNode{opr:"^".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("pow"/"^") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"^".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l3() {c}
             }
         #[cache_left_rec]
         rule l3() -> Node
             = precedence! {
-                start:position!() _ "!" _ r:l2() end:position!() { Node::UOpr(UOprNode{opr:"!".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() _ "+" _ r:l2() end:position!() { Node::UOpr(UOprNode{opr:"+".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() _ "-" _ r:l2() end:position!() { Node::UOpr(UOprNode{opr:"-".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() _ "√" _ r:l2() end:position!() { Node::UOpr(UOprNode{opr:"√".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() _ "!" _ r:l3() end:position!() { Node::UOpr(UOprNode{opr:"!".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() _ "+" _ r:l3() end:position!() { Node::UOpr(UOprNode{opr:"+".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() _ "-" _ r:l3() end:position!() { Node::UOpr(UOprNode{opr:"-".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() _ "√" _ r:l3() end:position!() { Node::UOpr(UOprNode{opr:"√".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("fac"/"!") _sexpr() r:expr() __ ")" end:position!() { Node::UOpr(UOprNode{opr:"!".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("plus"/"+") _sexpr() r:expr() __ ")" end:position!() { Node::UOpr(UOprNode{opr:"+".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("min"/"-") _sexpr() r:expr() __ ")" end:position!() { Node::UOpr(UOprNode{opr:"-".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("sqr"/"√") _sexpr() r:expr() __ ")" end:position!() { Node::UOpr(UOprNode{opr:"√".to_string(),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l2() {c}
             }
         rule l2() -> Node = l2_1()
@@ -188,6 +208,8 @@ peg::parser! {
             = quiet!{ " "+ }
         rule __() // space | LF | comment
             = quiet!{ ( "\n" / " " / blockComment() / lineComment())* }
+        rule _sexpr() // space | LF | comment needed
+            = quiet!{ ( "\n" / " " ) ( "\n" / " " / blockComment() / lineComment())* }
     }
 }
 
