@@ -7,7 +7,8 @@ pub enum Node {
     Bool(BoolNode),
     String(StringNode),
     Array(ArrayNode),
-    Object(ObjNode),
+    Object(ObjectNode),
+    Function(FunctionNode),
     // identifier
     Id(IdNode),
     Key(KeyNode),
@@ -23,19 +24,27 @@ pub enum Node {
     AStat(AStatNode),
     MLTAStat(MLTAStatNode),
     PMLTAStat(PMLTAStatNode),
+    Return(),
+    Break(),
+    Continue(),
     // rootobj
     // Includes(IncludesNode),
     Includes(IncludesNode),
     IncludesBlock(IncludesBlockNode),
     // Init(InitNode),
     // Item(ItemNode),
+    Obj(ObjNode),
     TLObj(TLObjNode),
     Init(InitNode),
+    Item(ItemNode),
     TLObjStat(TLObjStatNode),
     Block(BlockNode),
     // TimeLine(TimeLineNode),
     // structure
     If(IfNode),
+    While(WhileNode),
+    Times(TimesNode),
+    TimesAs(TimesAsNode),
     //
     Scope(),
     Tmp(),
@@ -62,14 +71,20 @@ pub struct ArrayNode {
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
-pub struct ObjElmNode {
+pub struct ObjectElmNode {
     pub key: Node,
     pub val: Node,
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
-pub struct ObjNode {
-    pub val: Vec<ObjElmNode>,
+pub struct ObjectNode {
+    pub val: Vec<ObjectElmNode>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct FunctionNode {
+    pub args: Vec<Node>,
+    pub val: Box<Node>,
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
@@ -146,7 +161,24 @@ pub struct PMLTAStatNode {
 }
 
 #[derive(Debug,Serialize,Clone)]
+pub struct ObjNode {
+    pub val: Vec<ObjFuncNode>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ObjFuncNode {
+    pub name: String,
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
 pub struct InitNode {
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ItemNode {
+    pub name: Box<Node>,
     pub val: Box<Node>,
     pub pos: NodePos,
 }
@@ -163,7 +195,7 @@ pub struct TLObjNode {
 #[derive(Debug,Serialize,Clone)]
 pub struct TLObjStatNode {
     pub objname: Box<Node>,
-    pub args: Vec<ObjElmNode>,
+    pub args: Vec<ObjectElmNode>,
     pub pos: NodePos,
 }
 
@@ -194,6 +226,25 @@ pub struct IfElmNode {
 #[derive(Debug,Serialize,Clone)]
 pub struct IfNode {
     pub val: Vec<IfElmNode>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct WhileNode {
+    pub cond: Box<Node>,
+    pub block: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct TimesNode {
+    pub num: Box<Node>,
+    pub block: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct TimesAsNode {
+    pub loc: Box<Node>,
+    pub num: Box<Node>,
+    pub block: Box<Node>,
     pub pos: NodePos,
 }
 

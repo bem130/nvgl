@@ -92,6 +92,11 @@ function addGraphObj(txt,obj,name,i) {
             addGraphObj(txt,val.loc,`${name}${i}`,"l");
             addGraphObj(txt,val.expr,`${name}${i}`,"e");
             break;
+        case "ReturnStat":
+            txt.main += `${name} --> ${name}${i}["ReturnStat"]\n`;
+            console.log(obj,key)
+            addGraphObj(txt,val.expr,`${name}${i}`,"e");
+            break;
         case "MLTAStat":
             txt.main += `${name} --> ${name}${i}["MLTAStat"]\n`;
             console.log(obj,key)
@@ -132,6 +137,14 @@ function addGraphObj(txt,obj,name,i) {
             console.log(obj,key)
             addGraphObj(txt,val.val,`${name}${i}`,"i");
             break;
+        case "Item":
+            txt.main += `${name} --> ${name}${i}["Item()"]\n`;
+            console.log(obj,key)
+            txt.main += `${name}${i} --> ${name}${i}l["name"]\n`;
+            addGraphObj(txt,val.name,`${name}${i}l`,"i");
+            txt.main += `${name}${i} --> ${name}${i}r["block"]\n`;
+            addGraphObj(txt,val.val,`${name}${i}r`,"i");
+            break;
         case "TLObj":
             txt.main += `${name} --> ${name}${i}["TimeLine"]\n`;
             console.log(obj,key)
@@ -150,6 +163,22 @@ function addGraphObj(txt,obj,name,i) {
                 addGraphObj(txt,val.args[j].key,`${name}${i}a${j}_`,`l`);
                 addGraphObj(txt,val.args[j].val,`${name}${i}a${j}_`,`r`);
             }
+            break;
+        case "FuncCall":
+            txt.main += `${name} --> ${name}${i}["${key}"]\n`;
+            addGraphObj(txt,val.func,`${name}${i}`,"l");
+            txt.main += `${name}${i} --> ${name}${i}a["Args"]\n`;
+            for (let j in val.args) {
+                addGraphObj(txt,val.args[j],`${name}${i}a`,`${j}_r`);
+            }
+            break;
+        case "Function":
+            txt.main += `${name} --> ${name}${i}["${key}"]\n`;
+            txt.main += `${name}${i} --> ${name}${i}a["Args"]\n`;
+            for (let j in val.args) {
+                addGraphObj(txt,val.args[j],`${name}${i}a`,`${j}_r`);
+            }
+            addGraphObj(txt,val.val,`${name}${i}`,"l");
             break;
     }
     if (val.pos!=null) {
