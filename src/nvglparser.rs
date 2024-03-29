@@ -1,10 +1,7 @@
 mod nvglnodetype;
-use js_sys::Object;
 use nvglnodetype::*;
 
 use std::str;
-use peg::parser;
-use colors_transform::*;
 use serde::Serialize;
 
 peg::parser! {

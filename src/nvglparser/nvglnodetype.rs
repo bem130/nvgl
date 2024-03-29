@@ -47,7 +47,6 @@ pub enum Node {
     TimesAs(TimesAsNode),
     //
     Scope(),
-    Tmp(),
 }
 
 #[derive(Debug,Serialize,Clone)]
