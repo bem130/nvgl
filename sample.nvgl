@@ -1,7 +1,11 @@
 # sample
+@imports {
+    Math, Image::Bitmap as img
+}
 @includes {
-    Text, Image::Bitmap as img
-}#*
+    Text
+}
+#*
 @init {
     !return;
 }*#

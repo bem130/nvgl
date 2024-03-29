@@ -72,5 +72,65 @@ function evalNVGL(expr,scope) {
     }
     throw( Error(`NVGL Eval Error: ${key}`) );
 }
+function init(ast) {
+    const astcheck = ASTchecker(ast);
+    const errmsgs = astcheck.err;
+    if (errmsgs.length>0) {
+        return errmsgs;
+    }
+    return "init";
+}
 
+function ASTchecker(ast) {
+    const errmsgs = [];
+    const objcnt = {Includes:0,Imports:0,Init:0,Item:0,Obj:0,TLObj:0};
+    const ItemNames = [];
+    const ObjNames = [];
+    for (let i=0;i<ast.length;i++) {
+        const objtype = Object.keys(ast[i])[0];
+        objcnt[objtype]++;
+        if (objtype=="Obj") {
+            const objname = ast[i].Obj.name.Id.val;
+            const objelmcnt = {init:0,length:0,tlconf:0,frame:0}
+            if (ObjNames.includes(objname)) {
+                errmsgs.push(`Object "${objname}" の定義が重複しています。`);
+            }
+            else {
+                ObjNames.push(objname);
+            }
+            for (let j=0;j<ast[i].Obj.val.length;j++) {
+                objelmcnt[ast[i].Obj.val[j].name]++;
+            }
+            for (let j of Object.keys(objelmcnt)) {
+                if (objelmcnt[j]==0) {
+                    errmsgs.push(`Object "${objname}" に ${j} が必要です。`);
+                }
+                if (objelmcnt[j]>1) {
+                    errmsgs.push(`Object "${objname}" の ${j} は1つにして下さい。`);
+                }
+            }
+        }
+        if (objtype=="Item") {
+            const itemname = ast[i].Item.name.Id.val;
+            console.log(itemname)
+            if (ItemNames.includes(itemname)) {
+                errmsgs.push(`Item "${itemname}" の定義が重複しています。`);
+            }
+            else {
+                ItemNames.push(itemname);
+            }
+        }
+    }
+    if (objcnt.Includes==0) {errmsgs.push("Includes が必要です。")}
+    if (objcnt.Imports==0) {errmsgs.push("Imports が必要です。")}
+    if (objcnt.Init==0) {errmsgs.push("Init が必要です。")}
+    if (objcnt.ILObj==0) {errmsgs.push("TimeLine が必要です。")}
+    if (objcnt.Includes>1) {errmsgs.push("Includes は1つにして下さい。")}
+    if (objcnt.Imports>1) {errmsgs.push("Imports は1つにして下さい。")}
+    if (objcnt.Init>1) {errmsgs.push("Init は1つにして下さい。")}
+    if (objcnt.ILObj>1) {errmsgs.push("TimeLine は1つにして下さい。")}
+    return {err:errmsgs,itemnames:ItemNames,objnames:ObjNames};
+}
+
+export {init as init};
 export default evalNVGL;

@@ -22,7 +22,7 @@ const tokenizer = {
             [/.*/, 'string', '@pop'],
         ],
         tlobj_a: [
-            [/@(?=((includes|init|timeline) *{?))/,{token:"tlobj.symbol",next:"@tlobja_"}],
+            [/@(?=((includes|imports|init|timeline) *{?))/,{token:"tlobj.symbol",next:"@tlobja_"}],
             [/\{/, { token: 'delimiter.brace', next: '@block' }]
         ],
         tlobj_b: [
@@ -32,7 +32,7 @@ const tokenizer = {
             [/\{/, { token: 'delimiter.brace', next: '@block' }]
         ],
         tlobja_: [
-            [/(includes|init|timeline)/,"tlobj.type","@pop"],
+            [/(includes|imports|init|timeline)/,"tlobj.type","@pop"],
         ],
         tlobjb_: [
             [/(item|obj)/,"tlobj.type"],

@@ -44,14 +44,12 @@ function drawGraphView(obj,_code,graphview) {
     for (let j in obj) {
         addGraphObj(graphDefinition,obj[j],"!",`${j}_`);
     }
-    console.log(graphDefinition.main)
     graphview.innerHTML = graphDefinition.main;
     mermaid.init();
 }
 function addGraphObj(txt,obj,name,i) {
     if (obj==null) {return}
     const keys = Object.keys(obj);
-    console.log(keys)
     if (keys.length!=1) {console.warn("Invalid AST");}
     const key = keys[0];
     const val = obj[key];
@@ -83,35 +81,29 @@ function addGraphObj(txt,obj,name,i) {
             break;
         case "Stat":
             txt.main += `${name} --> ${name}${i}["Stat"]\n`;
-            console.log(obj,key)
             addGraphObj(txt,val.expr,`${name}${i}`,"e");
             break;
         case "AStat":
             txt.main += `${name} --> ${name}${i}["AStat"]\n`;
-            console.log(obj,key)
             addGraphObj(txt,val.loc,`${name}${i}`,"l");
             addGraphObj(txt,val.expr,`${name}${i}`,"e");
             break;
         case "ReturnStat":
             txt.main += `${name} --> ${name}${i}["ReturnStat"]\n`;
-            console.log(obj,key)
             addGraphObj(txt,val.expr,`${name}${i}`,"e");
             break;
         case "MLTAStat":
             txt.main += `${name} --> ${name}${i}["MLTAStat"]\n`;
-            console.log(obj,key)
             addGraphObj(txt,val.loc,`${name}${i}`,"l");
             txt.main += `${name}${i} --val--> ${name}${i}v(${val.val})\n`;
             break;
         case "Block":
-            console.log(obj,key)
             for (let j in val.stats) {
                 addGraphObj(txt,val.stats[j],`${name}`,`${j}_`);
             }
             break;
         case "If":
             txt.main += `${name} --> ${name}${i}["If"]\n`;
-            console.log(obj,key)
             for (let j in val.val) {
                 txt.main += `${name}${i} --> ${name}${i}${j}_["IfElm ${Number(j)+1}"]\n`;
                 addGraphObj(txt,val.val[j].cond,`${name}${i}${j}_`,`l`);
@@ -120,26 +112,32 @@ function addGraphObj(txt,obj,name,i) {
             break;
         case "Includes":
             txt.main += `${name} --> ${name}${i}["Includes"]\n`;
-            console.log(obj,key)
             addGraphObj(txt,val.val,`${name}${i}`,"b");
             break;
         case "IncludesBlock":
-            console.log(obj,key)
             for (let j in val.val) {
                 txt.main += `${name} --> ${name}${i}${j}_["Include ${Number(j)+1}"]\n`;
                 addGraphObj(txt,val.val[j].module,`${name}${i}${j}_`,`${j}l_`);
                 addGraphObj(txt,val.val[j].name,`${name}${i}${j}_`,`${j}r_`);
-                console.log("includes",val.val[j])
+            }
+            break;
+        case "Imports":
+            txt.main += `${name} --> ${name}${i}["Imports"]\n`;
+            addGraphObj(txt,val.val,`${name}${i}`,"b");
+            break;
+        case "ImportsBlock":
+            for (let j in val.val) {
+                txt.main += `${name} --> ${name}${i}${j}_["Import ${Number(j)+1}"]\n`;
+                addGraphObj(txt,val.val[j].module,`${name}${i}${j}_`,`${j}l_`);
+                addGraphObj(txt,val.val[j].name,`${name}${i}${j}_`,`${j}r_`);
             }
             break;
         case "Init":
             txt.main += `${name} --> ${name}${i}["Init()"]\n`;
-            console.log(obj,key)
             addGraphObj(txt,val.val,`${name}${i}`,"i");
             break;
         case "Item":
             txt.main += `${name} --> ${name}${i}["Item()"]\n`;
-            console.log(obj,key)
             txt.main += `${name}${i} --> ${name}${i}l["name"]\n`;
             addGraphObj(txt,val.name,`${name}${i}l`,"i");
             txt.main += `${name}${i} --> ${name}${i}r["block"]\n`;
@@ -147,15 +145,12 @@ function addGraphObj(txt,obj,name,i) {
             break;
         case "TLObj":
             txt.main += `${name} --> ${name}${i}["TimeLine"]\n`;
-            console.log(obj,key)
             for (let j in val.val) {
                 addGraphObj(txt,val.val[j],`${name}${i}`,`${j}_`);
             }
             break;
         case "TLObjStat":
-            console.log("jfowjfoa",name)
             txt.main += `${name} --> ${name}${i}[["Object()"]]\n`;
-            console.log(obj,key)
             addGraphObj(txt,val.objname,`${name}${i}`,"l");
             txt.main += `${name}${i} --> ${name}${i}a["Args"]\n`;
             for (let j in val.args) {

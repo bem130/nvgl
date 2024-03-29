@@ -96,7 +96,7 @@ async function initnvgl() {
     }
     {
         const module = await import("./evalNVGL.js");
-        nvgl.eval = module.default;
+        nvgl.init = module.init;
     }
     {
         const module = await import("./astgraphNVGL.js");
@@ -134,22 +134,28 @@ function update() {
         monaco.editor.setModelMarkers(input.getModel(), 'NVGLSyntaxError', [errorMarker]);
     }
     nvgl.astgraph(parseRet,i,document.getElementById("graphview"));
-    // try {
-    //     const scope = {
-    //         Math: Math,
-    //         Number: Number,
-    //         String: String,
-    //         parseFloat: parseFloat,
-    //         parseInt: parseInt,
-    //         console: console,
-    //     };
-    //     nvgl.eval(parseRet,scope);
-    //     updateEditorData(evalOut,JSON.stringify(scope,null,4));
-    // }
-    // catch (e) {
-    //     console.error(e);
-    //     updateEditorData(evalOut,JSON.stringify([e.name,e.message,e.location],null,4));
-    // }
+    try {
+        // const scope = {
+        //     Math: Math,
+        //     Number: Number,
+        //     String: String,
+        //     parseFloat: parseFloat,
+        //     parseInt: parseInt,
+        //     console: console,
+        // };
+        const scope = {};
+        let initres = nvgl.init(parseRet,scope);
+        if (initres==true) {
+            updateEditorData(evalOut,JSON.stringify(scope,null,4));
+        }
+        else {
+            updateEditorData(evalOut,JSON.stringify(initres,null,4));
+        }
+    }
+    catch (e) {
+        console.error(e);
+        updateEditorData(evalOut,JSON.stringify([e.name,e.message,e.location],null,4));
+    }
 }
 
 

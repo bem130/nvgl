@@ -9,10 +9,11 @@ peg::parser! {
         pub rule root() -> Vec<Node>
             = __ e:rootObj() ** __  __ {e}
         rule rootObj() -> Node
-            = start:position!() "@includes" _ b:IncludesBlock() end:position!() { Node::Includes(IncludesNode{val:Box::new(b),pos:NodePos{start:start,end:end}}) }
+            = start:position!() "@imports" _ b:ImportsBlock() end:position!() { Node::Imports(ImportsNode{val:Box::new(b),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "@includes" _ b:IncludesBlock() end:position!() { Node::Includes(IncludesNode{val:Box::new(b),pos:NodePos{start:start,end:end}}) }
             / start:position!() "@init" _ e:Block() end:position!() { Node::Init(InitNode{val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "@item" ___ i:key() _ e:Block() end:position!() { Node::Item(ItemNode{name:Box::new(i),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
-            / start:position!() "@obj" ___ i:key() _ startE:position!() "{" __ e:objObj() ** __ __ "}" endE:position!() end:position!() { Node::Obj(ObjNode{val:e,pos:NodePos{start:start,end:end}}) }
+            / start:position!() "@obj" ___ i:key() _ startE:position!() "{" __ e:objObj() ** __ __ "}" endE:position!() end:position!() { Node::Obj(ObjNode{name:Box::new(i),val:e,pos:NodePos{start:start,end:end}}) }
             / start:position!() "@timeline" _ startE:position!() "{" __ e:TLObjStat() ** __ __ "}" endE:position!() end:position!() { Node::TLObj(TLObjNode{val:e,pos:NodePos{start:start,end:end}}) }
         rule objObj() -> ObjFuncNode
             = start:position!() "&init" _ e:Block() __ end:position!() { ObjFuncNode{name:"init".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}} }
@@ -26,8 +27,12 @@ peg::parser! {
         rule IncludesBlock() -> Node
             = start:position!() "{" __ e:includeselm() ** (_ "," __) (",")? __ "}" end:position!() { Node::IncludesBlock(IncludesBlockNode{val:e,pos:NodePos{start:start,end:end}}) }
         rule includeselm() -> IncludesElmNode
-            = start:position!() k:includekey() _ "as" _ v:key() end:position!() {IncludesElmNode{module:Node::Key(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
-            / start:position!() k:includekey() end:position!() {IncludesElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
+            = start:position!() k:includekey() end:position!() {IncludesElmNode{module:Node::Key(k.clone()),pos:NodePos{start:start,end:end}}}
+        rule ImportsBlock() -> Node
+            = start:position!() "{" __ e:importselm() ** (_ "," __) (",")? __ "}" end:position!() { Node::ImportsBlock(ImportsBlockNode{val:e,pos:NodePos{start:start,end:end}}) }
+        rule importselm() -> ImportsElmNode
+            = start:position!() k:includekey() _ "as" _ v:key() end:position!() {ImportsElmNode{module:Node::Key(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
+            / start:position!() k:includekey() end:position!() {ImportsElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
         #[cache_left_rec]
         rule includekey() -> KeyNode
             = precedence! {

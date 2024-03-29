@@ -31,6 +31,8 @@ pub enum Node {
     // Includes(IncludesNode),
     Includes(IncludesNode),
     IncludesBlock(IncludesBlockNode),
+    Imports(ImportsNode),
+    ImportsBlock(ImportsBlockNode),
     // Init(InitNode),
     // Item(ItemNode),
     Obj(ObjNode),
@@ -161,6 +163,7 @@ pub struct PMLTAStatNode {
 
 #[derive(Debug,Serialize,Clone)]
 pub struct ObjNode {
+    pub name: Box<Node>,
     pub val: Vec<ObjFuncNode>,
     pub pos: NodePos,
 }
@@ -206,12 +209,27 @@ pub struct IncludesNode {
 #[derive(Debug,Serialize,Clone)]
 pub struct IncludesElmNode {
     pub module: Node,
-    pub name: Box<Node>,
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
 pub struct IncludesBlockNode {
     pub val: Vec<IncludesElmNode>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ImportsNode {
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ImportsElmNode {
+    pub module: Node,
+    pub name: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ImportsBlockNode {
+    pub val: Vec<ImportsElmNode>,
     pub pos: NodePos,
 }
 
