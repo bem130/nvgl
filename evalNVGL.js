@@ -26,7 +26,12 @@ async function init(ast,filename,scope,code) {
     if (countErr(Msgs)) { return err2txt(Msgs,code); }
     scope = await runInit(ast,filename,Msgs,astcheck.init,scope);
     if (countErr(Msgs)) { return err2txt(Msgs,code); }
-    console.warn(scope)
+    scope = await makeItems(ast,filename,Msgs,astcheck.items,scope);
+    if (countErr(Msgs)) { return err2txt(Msgs,code); }
+    console.log(scope)
+    if (Msgs.length==0) {
+        return JSON.stringify(scope,null,4);
+    }
     return err2txt(Msgs,code);
 }
 
@@ -112,8 +117,21 @@ async function resolveImports(ast,filename,Msgs,imports,scope) {
 }
 
 async function runInit(ast,filename,Msgs,init,scope) {
-    console.log(scope)
-    evalBlock(init.val.Block,scope);
+    let ret = evalBlock(init.val.Block,Object.assign({},scope));
+    console.log("Init",ret)
+    return Object.assign(scope,ret);
+}
+
+async function makeItems(ast,filename,Msgs,items,scope) {
+    let ret = {}
+    for (let n of Object.keys(items)) {
+        console.log(items[n])
+        ret[n] = evalBlock(items[n].Block,Object.assign({},scope));
+    }
+    // console.log(scope)
+    // evalBlock(init.val.Block,scope);
+    // console.log("Init",ret)
+    return Object.assign(scope,ret);
 }
 
 
@@ -202,14 +220,13 @@ export {init as init};
 
 
 function evalBlock(block,scope) {
-    console.log(scope)
     for (let stat of block.stats) {
         let res = evalExpr(stat,scope);
         if (res.type=="ReturnStat"||res.type=="Return") {
             return res.val;
         }
     }
-    console.log(scope)
+    return;
 }
 function evalExpr(expr,scope) {
     if (expr==null) {return}
@@ -223,7 +240,6 @@ function evalExpr(expr,scope) {
         case "String":
         case "Number":
         case "Bool":
-            //console.warn("value",expr[key].val)
             return {type:key,val:expr[key].val};
         case "Function":
             {
@@ -236,7 +252,6 @@ function evalExpr(expr,scope) {
                     return ret;
                 }
                 const block = expr[key].val;
-                console.log("block",block)
                 return {type:key,val:(_scope,_args)=>{return evalBlock(block.Block,Object.assign({},_scope,bindname(_args)))}};
             }
         case "Id":
@@ -245,10 +260,7 @@ function evalExpr(expr,scope) {
             const kl = evalExpr(expr[key].l,scope).val;
             return {type:key,val:kl[expr[key].r.Id.val]};
         case "FuncCall":
-            //console.log(expr[key])
-            console.warn(evalExpr(expr[key].func,scope))
             let val = evalExpr(expr[key].func,scope).val(scope,expr[key].args.map((x=>{return evalExpr(x).val})))
-            console.log(val)
             return {type:"FuncCall",val:val}
             throw "err1";
         case "UOpr":
@@ -282,13 +294,28 @@ function evalExpr(expr,scope) {
                 case "^":  return {type:key,val:l**r};
             }
             throw "err3";
+        case "Object":
+            {
+                const obj = {};
+                for (let e of expr[key].val) {
+                    let _key = e.key.Id.val;
+                    if (_key in obj) {
+                        throw "既にキーが存在します";
+                    }
+                    obj[_key] = evalExpr(e.val,scope).val
+                }
+                //evalExpr(.expr,scope).val;
+                return {type:key,val:obj};
+            }
         case "Stat":
             evalExpr(expr[key].expr,scope).val;
             return {type:key};
         case "AStat":
+            delete evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val];
             evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val] = evalExpr(expr[key].expr,scope).val;
             return {type:key};
         case "MLTAStat":
+            delete evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val];
             evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val] = expr[key].val;
             return {type:key};
         case "ReturnStat":

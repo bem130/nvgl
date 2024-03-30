@@ -29,7 +29,7 @@
         c <: \(+ a b);
         !return c;
     };
-    res_add2<:add(10,3);
+    res_add2<:add(10,3);#*
     !if (10=2) {
         a <: 15-5*1;
     }
@@ -39,8 +39,8 @@
     else {
         a <: 2*3;
     }
-    10-5*2;
-    #!return {text:text,add:add};
+    10-5*2;*#
+    !return {text:text,add:add};
 }
 @item text {
     text <::
