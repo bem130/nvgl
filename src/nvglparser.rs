@@ -27,16 +27,16 @@ peg::parser! {
         rule IncludesBlock() -> Node
             = start:position!() "{" __ e:includeselm() ** (_ "," __) (",")? __ "}" end:position!() { Node::IncludesBlock(IncludesBlockNode{val:e,pos:NodePos{start:start,end:end}}) }
         rule includeselm() -> IncludesElmNode
-            = start:position!() k:includekey() end:position!() {IncludesElmNode{module:Node::Key(k.clone()),pos:NodePos{start:start,end:end}}}
+            = start:position!() k:key() end:position!() {IncludesElmNode{module:k,pos:NodePos{start:start,end:end}}}
         rule ImportsBlock() -> Node
             = start:position!() "{" __ e:importselm() ** (_ "," __) (",")? __ "}" end:position!() { Node::ImportsBlock(ImportsBlockNode{val:e,pos:NodePos{start:start,end:end}}) }
         rule importselm() -> ImportsElmNode
-            = start:position!() k:includekey() _ "as" _ v:key() end:position!() {ImportsElmNode{module:Node::Key(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
-            / start:position!() k:includekey() end:position!() {ImportsElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
+            = start:position!() k:importskey() _ "as" _ v:key() end:position!() {ImportsElmNode{module:Node::Key(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
+            / start:position!() k:importskey() end:position!() {ImportsElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
         #[cache_left_rec]
-        rule includekey() -> KeyNode
+        rule importskey() -> KeyNode
             = precedence! {
-                start:position!() l:includekey() _ "::" _ r:key() end:position!() { KeyNode{l:Box::new(Node::Key(l)), r:Box::new(r),pos:NodePos{start:start,end:end}} }
+                start:position!() l:importskey() _ "::" _ r:key() end:position!() { KeyNode{l:Box::new(Node::Key(l)), r:Box::new(r),pos:NodePos{start:start,end:end}} }
                 --
                 b:key() start:position!() end:position!() { KeyNode{l:Box::new(Node::Scope()), r:Box::new(b),pos:NodePos{start:start,end:end}} }
             }

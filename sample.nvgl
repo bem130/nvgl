@@ -1,6 +1,7 @@
 # sample
 @imports {
-    Math, Image::Bitmap as img
+    Math,# Image::Bitmap as img,
+    Math::sin as sin
 }
 @includes {
     Text
@@ -34,7 +35,7 @@
         a <: 2*3;
     }
     10-5*2;
-    !return;
+    !return {text:text,add:add};
 }
 @item text {
     text <::

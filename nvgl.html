@@ -113,7 +113,7 @@ window.addEventListener("load", async()=>{
     
     requestAnimationFrame(update); // for debug
 })
-function update() {
+async function update() {
     let i = input.getValue().replace(/\r\n/g,"\n");
     //console.log("input: ",i);
     let parseResult = JSON.parse(nvgl.parser.ParseNVGL(i));
@@ -144,12 +144,12 @@ function update() {
         //     console: console,
         // };
         const scope = {};
-        let initres = nvgl.init(parseRet,scope);
-        if (initres==true) {
-            updateEditorData(evalOut,JSON.stringify(scope,null,4));
+        let initres = await nvgl.init(parseRet,"inline",scope,i);
+        if (initres[0]==true) {
+            updateEditorData(evalOut,JSON.stringify(Object.keys(scope),null,4));
         }
         else {
-            updateEditorData(evalOut,JSON.stringify(initres,null,4));
+            updateEditorData(evalOut,initres);
         }
     }
     catch (e) {
@@ -188,13 +188,13 @@ require(["vs/editor/editor.main"], async function () {
         ScopeMarker(0,0);
     })
     evalOut = monaco.editor.create(document.querySelectorAll(".output")[0],{
-        language: "javascript",
+        language: "json",
         readOnly: true,
         theme: "nvgl-dark",
         roundedSelection: true,
         lineNumbers: "off",
         automaticLayout: true,
-        fontSize: 20,
+        fontSize: 12,
     });
     parseOut = monaco.editor.create(document.querySelectorAll(".output")[1],{
         language: "javascript",
