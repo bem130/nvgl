@@ -41,6 +41,11 @@ pub enum Node {
     Item(ItemNode),
     TLObjStat(TLObjStatNode),
     Block(BlockNode),
+    ObjFunc(ObjFuncNode),
+    ObjConf(ObjConfNode),
+    ObjFrame(ObjFrameNode),
+    ObjConfGElm(ObjConfGElmNode),
+    ObjConfRElm(ObjConfRElmNode),
     // TimeLine(TimeLineNode),
     // structure
     If(IfNode),
@@ -164,12 +169,37 @@ pub struct PMLTAStatNode {
 #[derive(Debug,Serialize,Clone)]
 pub struct ObjNode {
     pub name: Box<Node>,
-    pub val: Vec<ObjFuncNode>,
+    pub val: Vec<Node>,
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]
 pub struct ObjFuncNode {
     pub name: String,
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ObjConfNode {
+    pub val: Vec<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ObjFrameNode {
+    pub arg: String,
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ObjConfGElmNode {
+    pub name: String,
+    pub valtype: String,
+    pub val: Box<Node>,
+    pub pos: NodePos,
+}
+#[derive(Debug,Serialize,Clone)]
+pub struct ObjConfRElmNode {
+    pub name: String,
+    pub valtype: String,
     pub val: Box<Node>,
     pub pos: NodePos,
 }

@@ -52,6 +52,11 @@
     !return text;
 }
 @obj text {
+    &conf {
+        start: 0 :number,
+        len: 0 :number,
+        text: "" :text,
+    }
     &init {
         !return;
     }
@@ -62,7 +67,7 @@
     &tlconf {
         !return {text:"text: " + t,color:#ff5575,textcolor:#000};
     }
-    &frame {
+    &frame(f) {
         !return t->Text::toImage(30,30,30);
     }
 }

@@ -150,7 +150,7 @@ function ASTchecker(ast,filename,Msgs) {
         objcnt[objtype]++;
         if (objtype=="Obj") {
             const objname = ast[i].Obj.name.Id.val;
-            const objelmcnt = {init:0,length:0,tlconf:0,frame:0};
+            const objelmcnt = {conf:0,init:0,length:0,tlconf:0,frame:0};
             if (ObjNames.includes(objname)) {
                 Msgs.push(["err",`Object "${objname}" の定義が重複しています。`,filename,ast[i].Obj.name.Id.pos]);
             }
@@ -160,6 +160,17 @@ function ASTchecker(ast,filename,Msgs) {
             }
             for (let j=0;j<ast[i].Obj.val.length;j++) {
                 objelmcnt[ast[i].Obj.val[j].name]++;
+                switch (Object.keys(ast[i].Obj.val[j])[0]) {
+                    case "ObjFunc":
+                        objelmcnt[ast[i].Obj.val[j].ObjFunc.name]++;
+                        break;
+                    case "ObjConf":
+                        objelmcnt.conf++;
+                        break;
+                    case "ObjFrame":
+                        objelmcnt.frame++;
+                        break;
+                }
             }
             for (let j of Object.keys(objelmcnt)) {
                 if (objelmcnt[j]==0) {
@@ -292,6 +303,7 @@ function evalExpr(expr,scope) {
                 case "/":  return {type:key,val:l/r};
                 case "%":  return {type:key,val:l%r};
                 case "^":  return {type:key,val:l**r};
+                case "??":  return {type:key,val:l??r};
             }
             throw "err3";
         case "Object":

@@ -15,11 +15,12 @@ peg::parser! {
             / start:position!() "@item" ___ i:key() _ e:Block() end:position!() { Node::Item(ItemNode{name:Box::new(i),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "@obj" ___ i:key() _ startE:position!() "{" __ e:objObj() ** __ __ "}" endE:position!() end:position!() { Node::Obj(ObjNode{name:Box::new(i),val:e,pos:NodePos{start:start,end:end}}) }
             / start:position!() "@timeline" _ startE:position!() "{" __ e:TLObjStat() ** __ __ "}" endE:position!() end:position!() { Node::TLObj(TLObjNode{val:e,pos:NodePos{start:start,end:end}}) }
-        rule objObj() -> ObjFuncNode
-            = start:position!() "&init" _ e:Block() __ end:position!() { ObjFuncNode{name:"init".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}} }
-            / start:position!() "&length" _ e:Block() __ end:position!() { ObjFuncNode{name:"length".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}} }
-            / start:position!() "&tlconf" _ e:Block() __ end:position!() { ObjFuncNode{name:"tlconf".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}} }
-            / start:position!() "&frame" _ e:Block() __ end:position!() { ObjFuncNode{name:"frame".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}} }
+        rule objObj() -> Node
+            = start:position!() "&conf" _ "{" __ e:objconf() ** (_ "," __) (",")? __ "}" end:position!() { Node::ObjConf(ObjConfNode{val:e,pos:NodePos{start:start,end:end}}) }
+            / start:position!() "&init" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"init".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "&length" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"length".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "&tlconf" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"tlconf".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "&frame" _ "(" _ s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ")" _ e:Block() __ end:position!() { Node::ObjFrame(ObjFrameNode{arg:s.to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
         rule TLObjStat() -> Node
             = start:position!() f:key() _ "("  __ a:objelm() ** (_ "," __) __ ");" end:position!() { Node::TLObjStat(TLObjStatNode{objname:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
         rule Block() -> Node
@@ -33,6 +34,9 @@ peg::parser! {
         rule importselm() -> ImportsElmNode
             = start:position!() k:importskey() _ "as" _ v:key() end:position!() {ImportsElmNode{module:Node::Key(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
             / start:position!() k:importskey() end:position!() {ImportsElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
+        rule objconf() -> Node
+            = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ":" _ v:expr() _ ":" _ t:$(['a'..='z']*) end:position!() { Node::ObjConfGElm(ObjConfGElmNode{name:s.to_string(),valtype:t.to_string(),val:Box::new(v),pos:NodePos{start:start,end:end}}) }
+            / start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ":" _ v:objconf() _ ":" _ t:$(['a'..='z']*) end:position!() { Node::ObjConfRElm(ObjConfRElmNode{name:s.to_string(),valtype:t.to_string(),val:Box::new(v),pos:NodePos{start:start,end:end}}) }
         #[cache_left_rec]
         rule importskey() -> KeyNode
             = precedence! {
@@ -70,14 +74,26 @@ peg::parser! {
                 b:key() start:position!() end:position!() { Node::Key(KeyNode{l:Box::new(Node::Scope()), r:Box::new(b),pos:NodePos{start:start,end:end}}) }
             }
         #[cache_left_rec]
-        rule expr() -> Node = l9()
+        rule expr() -> Node = l11()
+        #[cache_left_rec]
+        rule l11() -> Node
+            = precedence! {
+                start:position!() l:l11() _ "??" _ r:l10() end:position!() { Node::Opr(OprNode{opr:"??".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("??") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"??".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                c:l10() {c}
+            }
+        #[cache_left_rec]
+        rule l10() -> Node
+            = precedence! {
+                start:position!() l:l10() _ "||" _ r:l9() end:position!() { Node::Opr(OprNode{opr:"||".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() "\\(" _ ("or"/"||") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"||".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                c:l9() {c}
+            }
         #[cache_left_rec]
         rule l9() -> Node
             = precedence! {
                 start:position!() l:l9() _ "&&" _ r:l8() end:position!() { Node::Opr(OprNode{opr:"&&".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() l:l9() _ "||" _ r:l8() end:position!() { Node::Opr(OprNode{opr:"||".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 start:position!() "\\(" _ ("and"/"&&") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"&&".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() "\\(" _ ("or"/"||") _sexpr() l:expr() _sexpr() r:expr() __ ")" end:position!() { Node::Opr(OprNode{opr:"||".to_string(),l:Box::new(l),r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l8() {c}
             }
         #[cache_left_rec]
@@ -197,7 +213,7 @@ peg::parser! {
         rule objelm() -> ObjectElmNode
             = start:position!() k:expr() _ ":" _ v:expr() end:position!() {ObjectElmNode{key:k,val:v,pos:NodePos{start:start,end:end}}}
         rule var() -> Node
-            = start:position!() s:$(((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*)/"@"/"~") end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
+            = start:position!() s:$(((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*)/"~") end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule key() -> Node
             = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule multilineText() -> String
