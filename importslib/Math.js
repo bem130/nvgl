@@ -4,7 +4,8 @@ function init() {
 
 const val = {
     E: Math.E,
-    sin: Math.sin,
+    sin: (_,args)=>{return Math.sin(...args)},
+    cos: (_,args)=>{return Math.cos(...args)},
 }
 
 

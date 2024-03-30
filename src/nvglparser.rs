@@ -197,7 +197,7 @@ peg::parser! {
         rule objelm() -> ObjectElmNode
             = start:position!() k:expr() _ ":" _ v:expr() end:position!() {ObjectElmNode{key:k,val:v,pos:NodePos{start:start,end:end}}}
         rule var() -> Node
-            = start:position!() s:$(((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*)/"~") end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
+            = start:position!() s:$(((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*)/"@"/"~") end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule key() -> Node
             = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) end:position!() { Node::Id(IdNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
         rule multilineText() -> String

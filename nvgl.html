@@ -118,7 +118,7 @@ async function update() {
     //console.log("input: ",i);
     let parseResult = JSON.parse(nvgl.parser.ParseNVGL(i));
     let parseRet = parseResult.res;
-    updateEditorData(parseOut,JSON.stringify(parseRet,null,4)??parseRet.toString());
+    updateEditorData(parseOut,JSON.stringify(parseRet,null,2)??parseRet.toString());
     console.log(parseRet);
     monaco.editor.setModelMarkers(input.getModel(), 'NVGLSyntaxError', []);
     if (!parseResult.isOk) {
