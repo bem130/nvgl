@@ -205,7 +205,7 @@ function evalBlock(block,scope) {
     console.log(scope)
     for (let stat of block.stats) {
         let res = evalExpr(stat,scope);
-        if (res.type=="ReturnStat"||res.type=="Return") {make
+        if (res.type=="ReturnStat"||res.type=="Return") {
             return res.val;
         }
     }
