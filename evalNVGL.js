@@ -16,13 +16,13 @@ function getLineAndCol(i,code) {
 }
 
 
-async function init(ast,filename,scope,code) {
+async function init(ast,filename,scope,code,importsDir) {
     const Msgs = [];
     const astcheck = await ASTchecker(ast,filename,Msgs);
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await resolveIncludes(ast,filename,Msgs,scope);
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
-    scope = await resolveImports(ast,filename,Msgs,astcheck.imports,scope);
+    scope = await resolveImports(ast,filename,Msgs,astcheck.imports,scope,importsDir);
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await runInit(ast,filename,Msgs,astcheck.init,scope);
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
@@ -53,8 +53,7 @@ async function resolveIncludes(ast,filename,Msgs,scope) {
     return scope;
 }
 
-async function resolveImports(ast,filename,Msgs,imports,scope) {
-    const importsDir = "/importslib/"
+async function resolveImports(ast,filename,Msgs,imports,scope,importsDir) {
     for (let _import of imports) {
         //console.log("imports",_import);
         console.log("imports",importsDir+_import[1][0].val+".js");

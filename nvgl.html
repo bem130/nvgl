@@ -145,7 +145,7 @@ async function update() {
         //     console: console,
         // };
         const scope = {};
-        let initres = await nvgl.init(parseRet,"inline",scope,i);
+        let initres = await nvgl.init(parseRet,"inline",scope,i,"/importslib/");
         console.log(initres)
         if (initres.type == "ok") {
             timeline = initres.timeline;
