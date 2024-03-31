@@ -203,10 +203,10 @@ peg::parser! {
         rule colorLiteral() -> String
             = c:colorCode() {c}
         rule colorCode() -> String
-            = "#" d1:$(colorcodeD2()) d2:$(colorcodeD2()) d3:$(colorcodeD2()) d4:$(colorcodeD2()) {format!("{}{}{}{}",d1,d2,d3,d4)}
-            / "#" d1:$(colorcodeD2()) d2:$(colorcodeD2()) d3:$(colorcodeD2()) {format!("{}{}{}FF",d1,d2,d3)}
-            / "#" d1:$(colorcodeD1()) d2:$(colorcodeD1()) d3:$(colorcodeD1()) d4:$(colorcodeD1()) {format!("{}{}{}{}{}{}{}{}",d1,d1,d2,d2,d3,d3,d4,d4)}
-            / "#" d1:$(colorcodeD1()) d2:$(colorcodeD1()) d3:$(colorcodeD1()) {format!("{}{}{}{}{}{}FF",d1,d1,d2,d2,d3,d3)}
+            = "#" d1:$(colorcodeD2()) d2:$(colorcodeD2()) d3:$(colorcodeD2()) d4:$(colorcodeD2()) {format!("#{}{}{}{}",d1,d2,d3,d4)}
+            / "#" d1:$(colorcodeD2()) d2:$(colorcodeD2()) d3:$(colorcodeD2()) {format!("#{}{}{}FF",d1,d2,d3)}
+            / "#" d1:$(colorcodeD1()) d2:$(colorcodeD1()) d3:$(colorcodeD1()) d4:$(colorcodeD1()) {format!("#{}{}{}{}{}{}{}{}",d1,d1,d2,d2,d3,d3,d4,d4)}
+            / "#" d1:$(colorcodeD1()) d2:$(colorcodeD1()) d3:$(colorcodeD1()) {format!("#{}{}{}{}{}{}FF",d1,d1,d2,d2,d3,d3)}
         rule colorcodeD1() = (['0'..='9']/['a'..='f']/['A'..='F'])
         rule colorcodeD2() -> String
             = d:$(colorcodeD1() colorcodeD1()) {d.to_string()}
