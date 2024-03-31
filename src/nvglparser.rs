@@ -195,7 +195,7 @@ peg::parser! {
             / start:position!() n:$(['0'..='9']+) end:position!() { Node::Number(NumberNode{val:n.parse().unwrap(),pos:NodePos{start:start,end:end}}) }
             / start:position!() n:$("true") end:position!()  { Node::Bool(BoolNode{val:true,pos:NodePos{start:start,end:end}}) }
             / start:position!() n:$("false") end:position!()  { Node::Bool(BoolNode{val:false,pos:NodePos{start:start,end:end}}) }
-            / start:position!() "\"" s:$((("\\\"")/[^'\"'])*) "\"" end:position!() { Node::String(StringNode{val:s.to_string(),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "\"" s:$((("\\\"")/[^'\"'])*) "\"" end:position!() { Node::String(StringNode{val:s.replace("\\n","\n"),pos:NodePos{start:start,end:end}}) }
             / start:position!() c:colorLiteral() end:position!() { Node::String(StringNode{val:c,pos:NodePos{start:start,end:end}}) }
             / start:position!() "{" __ e:expr() ** (_ "," __) (",")? __ "}" end:position!() { Node::Array(ArrayNode{val:e,pos:NodePos{start:start,end:end}}) }
             / start:position!() "{" __ e:objelm() ** (_ "," __) (",")? __ "}" end:position!() { Node::Object(ObjectNode{val:e,pos:NodePos{start:start,end:end}}) }

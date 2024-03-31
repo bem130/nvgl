@@ -393,7 +393,7 @@ function evalExpr(expr,scope) {
                 }
                 // const kl = evalExpr(expr[key].l,scope).val;
                 // return {type:key,val:kl[expr[key].r.Id.val]};
-                throw "err4"
+                return {type:"if"};
             }
         case "While":
             {
@@ -446,7 +446,6 @@ function evalExpr(expr,scope) {
             {
                 const res = evalExpr(expr[key].expr,scope).val;
                 evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val] = res;
-                console.log(res,scope)
                 return {type:key};
             }
         case "MLTAStat":
