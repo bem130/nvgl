@@ -51,24 +51,27 @@
 
     !return text;
 }
-@obj text {
+@obj Text {
     &conf {
         start: 0 :number,
         len: 0 :number,
         text: "" :text,
+        tlconf: {
+            textcolor: #000 : color,
+        },
     }
     &init {
-        !return;
+        !return {a:0};
     }
-    &length {
+    &range {
         10*5+3*(5-3)>=5*3 && 10%3>2;
-        !return l;
+        !return {start:start,length:len};
     }
     &tlconf {
-        !return {text:"text: " + t,color:#ff5575,textcolor:#000};
+        !return {text:"text: " + text,color:#ff5575,textcolor:tlconf::textcolor};
     }
     &frame(f) {
-        !return t->Text::toImage(30,30,30);
+        !return f;
     }
 }
 @timeline {

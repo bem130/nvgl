@@ -86,6 +86,7 @@ document.querySelectorAll(".resizer_Hcontainer").forEach((x)=>{resizer_Hcontaine
 <script>
 
 var nvgl,ScopeMarker;
+var timeline = [];
 async function initnvgl() {
     nvgl = {}
     {
@@ -145,11 +146,13 @@ async function update() {
         // };
         const scope = {};
         let initres = await nvgl.init(parseRet,"inline",scope,i);
-        if (initres[0]==true) {
-            updateEditorData(evalOut,JSON.stringify(Object.keys(scope),null,4));
+        console.log(initres)
+        if (initres.type == "ok") {
+            timeline = initres.timeline;
+            updateEditorData(evalOut,initres.msgstxt+JSON.stringify(Object.keys(scope),null,4));
         }
         else {
-            updateEditorData(evalOut,initres);
+            updateEditorData(evalOut,initres.val);
         }
     }
     catch (e) {

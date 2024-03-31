@@ -19,20 +19,18 @@ function getLineAndCol(i,code) {
 async function init(ast,filename,scope,code) {
     const Msgs = [];
     const astcheck = await ASTchecker(ast,filename,Msgs);
-    if (countErr(Msgs)) { return err2txt(Msgs,code); }
+    if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await resolveIncludes(ast,filename,Msgs,scope);
-    if (countErr(Msgs)) { return err2txt(Msgs,code); }
+    if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await resolveImports(ast,filename,Msgs,astcheck.imports,scope);
-    if (countErr(Msgs)) { return err2txt(Msgs,code); }
+    if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await runInit(ast,filename,Msgs,astcheck.init,scope);
-    if (countErr(Msgs)) { return err2txt(Msgs,code); }
+    if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await makeItems(ast,filename,Msgs,astcheck.items,scope);
-    if (countErr(Msgs)) { return err2txt(Msgs,code); }
-    console.log(scope)
-    if (Msgs.length==0) {
-        return JSON.stringify(scope,null,4);
-    }
-    return err2txt(Msgs,code);
+    if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
+    const timeline = await initTimeLine(ast,filename,Msgs,astcheck.timeline,astcheck.objs,scope);
+    if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
+    return {type:"ok",scope:scope,msgs:Msgs,timeline:timeline,msgstxt:err2txt(Msgs,code)}
 }
 
 function countErr(Msgs) {
@@ -134,6 +132,57 @@ async function makeItems(ast,filename,Msgs,items,scope) {
     return Object.assign(scope,ret);
 }
 
+async function initTimeLine(ast,filename,Msgs,timeline,objs,scope) {
+    console.log(timeline)
+    console.log(objs)
+    let ret = []
+    for (let obj of timeline) {
+        const objname = obj.TLObjStat.objname.Id.val;
+        const tobj = objs[objname];
+        const ret_obj = {type:obj.TLObjStat.objname.Id.val};
+        ret.push(ret_obj);
+        // args
+        const args = {}
+        for (let a of obj.TLObjStat.args) {
+            if (a.key.Id.val in args) {
+                Msgs.push(["warn",`引数 "${a.key.Id.val}" が複数宣言されています。`,filename,a.pos]);
+            }
+            args[a.key.Id.val] = evalExpr(a.val,Object.assign({},scope)).val;
+        }
+        // ObjConf
+        const objconf = evalObjConf(tobj.ObjConf);
+        ret_obj.conf = Object.assign(objconf,args);
+        // init
+        ret_obj.init = evalBlock(tobj.init.Block,Object.assign({},scope,ret_obj.conf));
+        // length
+        ret_obj.range = evalBlock(tobj.range.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init));
+        // tlconf
+        ret_obj.tlconf = evalBlock(tobj.tlconf.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init));
+        // frame
+        console.log(tobj)
+        const argname = tobj.ArgName;
+        const frameblock = tobj.ObjFrame.Block;
+        console.log(frameblock)
+        const framescope = Object.assign({},scope,ret_obj.conf,ret_obj.init);
+        ret_obj.frameFunc = (frame)=>{const arg={};arg[argname]=frame;return evalBlock(frameblock,Object.assign({},framescope,arg))};
+    }
+    console.log("TimeLine",ret)
+    return ret;
+}
+function evalObjConf(ObjConf) {
+    let ret = {};
+    for (let e of ObjConf) {
+        switch (Object.keys(e)[0]) {
+            case "ObjConfGElm":
+                ret[e.ObjConfGElm.name] = evalExpr(e.ObjConfGElm.val).val;
+                break;
+            case "ObjConfRElm":
+                ret[e.ObjConfRElm.name] = evalObjConf(e.ObjConfRElm.val)
+                break;
+        }
+    }
+    return ret;
+}
 
 function ASTchecker(ast,filename,Msgs) {
     const objcnt = {Includes:0,Imports:0,Init:0,Item:0,Obj:0,TLObj:0};
@@ -150,25 +199,30 @@ function ASTchecker(ast,filename,Msgs) {
         objcnt[objtype]++;
         if (objtype=="Obj") {
             const objname = ast[i].Obj.name.Id.val;
-            const objelmcnt = {conf:0,init:0,length:0,tlconf:0,frame:0};
+            const objelmcnt = {conf:0,init:0,range:0,tlconf:0,frame:0};
             if (ObjNames.includes(objname)) {
                 Msgs.push(["err",`Object "${objname}" の定義が重複しています。`,filename,ast[i].Obj.name.Id.pos]);
             }
             else {
                 ObjNames.push(objname);
-                Objs[objname] = ast[i].Obj.val;
+                //Objs[objname] = ast[i].Obj.val;
             }
+            Objs[objname] = {};
             for (let j=0;j<ast[i].Obj.val.length;j++) {
                 objelmcnt[ast[i].Obj.val[j].name]++;
                 switch (Object.keys(ast[i].Obj.val[j])[0]) {
                     case "ObjFunc":
+                        Objs[objname][ast[i].Obj.val[j].ObjFunc.name] = ast[i].Obj.val[j].ObjFunc.val;
                         objelmcnt[ast[i].Obj.val[j].ObjFunc.name]++;
                         break;
                     case "ObjConf":
+                        Objs[objname].ObjConf = ast[i].Obj.val[j].ObjConf.val;
                         objelmcnt.conf++;
                         break;
                     case "ObjFrame":
+                        Objs[objname].ObjFrame = ast[i].Obj.val[j].ObjFrame.val;
                         objelmcnt.frame++;
+                        Objs[objname].ArgName = ast[i].Obj.val[j].ObjFrame.arg;
                         break;
                 }
             }
@@ -215,6 +269,9 @@ function ASTchecker(ast,filename,Msgs) {
         if (objtype=="Init") {
             Init = ast[i].Init;
         }
+        if (objtype=="TLObj") {
+            TimeLine = ast[i].TLObj.val;
+        }
     }
     if (objcnt.Includes==0) {Msgs.push(["err",`Includes が必要です。`      ,filename,{start:0,end:0}])}
     if (objcnt.Imports==0) { Msgs.push(["err",`Imports が必要です。`       ,filename,{start:0,end:0}])}
@@ -226,9 +283,6 @@ function ASTchecker(ast,filename,Msgs) {
     if (objcnt.ILObj>1) {    Msgs.push(["err",`TLObj は1つにして下さい。`   ,filename,{start:0,end:0}])}
     return {itemnames:ItemNames,objnames:ObjNames,items:Items,objs:Objs,includes:Includes,imports:Imports,init:Init,timeline:TimeLine};
 }
-
-export {init as init};
-
 
 function evalBlock(block,scope) {
     for (let stat of block.stats) {
@@ -338,3 +392,5 @@ function evalExpr(expr,scope) {
     console.log(scope)
     throw( Error(`NVGL Eval Error: ${key}`) );
 }
+
+export {init as init,err2txt};

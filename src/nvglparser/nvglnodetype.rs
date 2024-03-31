@@ -199,8 +199,7 @@ pub struct ObjConfGElmNode {
 #[derive(Debug,Serialize,Clone)]
 pub struct ObjConfRElmNode {
     pub name: String,
-    pub valtype: String,
-    pub val: Box<Node>,
+    pub val: Vec<Node>,
     pub pos: NodePos,
 }
 #[derive(Debug,Serialize,Clone)]

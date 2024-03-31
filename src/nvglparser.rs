@@ -18,7 +18,7 @@ peg::parser! {
         rule objObj() -> Node
             = start:position!() "&conf" _ "{" __ e:objconf() ** (_ "," __) (",")? __ "}" end:position!() { Node::ObjConf(ObjConfNode{val:e,pos:NodePos{start:start,end:end}}) }
             / start:position!() "&init" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"init".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
-            / start:position!() "&length" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"length".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "&range" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"range".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "&tlconf" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"tlconf".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "&frame" _ "(" _ s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ")" _ e:Block() __ end:position!() { Node::ObjFrame(ObjFrameNode{arg:s.to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
         rule TLObjStat() -> Node
@@ -36,7 +36,7 @@ peg::parser! {
             / start:position!() k:importskey() end:position!() {ImportsElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
         rule objconf() -> Node
             = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ":" _ v:expr() _ ":" _ t:$(['a'..='z']*) end:position!() { Node::ObjConfGElm(ObjConfGElmNode{name:s.to_string(),valtype:t.to_string(),val:Box::new(v),pos:NodePos{start:start,end:end}}) }
-            / start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ":" _ v:objconf() _ ":" _ t:$(['a'..='z']*) end:position!() { Node::ObjConfRElm(ObjConfRElmNode{name:s.to_string(),valtype:t.to_string(),val:Box::new(v),pos:NodePos{start:start,end:end}}) }
+            / start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ":" _ "{" __ v:objconf() ** (_ "," __) (",")? __ "}" end:position!() { Node::ObjConfRElm(ObjConfRElmNode{name:s.to_string(),val:v,pos:NodePos{start:start,end:end}}) }
         #[cache_left_rec]
         rule importskey() -> KeyNode
             = precedence! {
