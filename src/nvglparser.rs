@@ -166,14 +166,14 @@ peg::parser! {
         #[cache_left_rec]
         rule l2_1() -> Node
             = precedence! {
-                start:position!() a1:l2_1() _ "->" _ f:l1() _ "(" __ a_:expr() ** (_ "," __) __ ")" end:position!() { let mut a = vec![a1];a.extend(a_);Node::FuncCall(FuncCallNode{func:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
+                start:position!() a1:l2_1() __ "->" __ f:l1() _ "(" __ a_:expr() ** (_ "," __) __ ")" end:position!() { let mut a = vec![a1];a.extend(a_);Node::FuncCall(FuncCallNode{func:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
                 c:l2_2() {c}
             }
         #[cache_left_rec]
         rule l2_2() -> Node
             = precedence! {
-                start:position!() f:l2_2() _ "(" _ ar:expr() ** (_ "," _) _ ")" end:position!() { Node::FuncCall(FuncCallNode{func:Box::new(f),args:ar,pos:NodePos{start:start,end:end}}) }
-                start:position!() f:l2_2() _ "@(" _ ar:expr() ** (_ "," _) _ ")" end:position!() { Node::NewFuncCall(NewFuncCallNode{func:Box::new(f),args:ar,pos:NodePos{start:start,end:end}}) }
+                start:position!() f:l2_2() _ "(" __ ar:expr() ** (_ "," __) __ ")" end:position!() { Node::FuncCall(FuncCallNode{func:Box::new(f),args:ar,pos:NodePos{start:start,end:end}}) }
+                start:position!() f:l2_2() _ "@(" __ ar:expr() ** (_ "," __) __ ")" end:position!() { Node::NewFuncCall(NewFuncCallNode{func:Box::new(f),args:ar,pos:NodePos{start:start,end:end}}) }
                 c:l1() {c}
             }
         #[cache_left_rec]
@@ -199,7 +199,7 @@ peg::parser! {
             / start:position!() c:colorLiteral() end:position!() { Node::String(StringNode{val:c,pos:NodePos{start:start,end:end}}) }
             / start:position!() "{" __ e:expr() ** (_ "," __) (",")? __ "}" end:position!() { Node::Array(ArrayNode{val:e,pos:NodePos{start:start,end:end}}) }
             / start:position!() "{" __ e:objelm() ** (_ "," __) (",")? __ "}" end:position!() { Node::Object(ObjectNode{val:e,pos:NodePos{start:start,end:end}}) }
-            / start:position!() "@(" _ ar:key() ** (_ "," _) _ ")" _ "=>" _ e:Block() end:position!() { Node::Function(FunctionNode{args:ar,val:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "@(" _ ar:key() ** (_ "," __) __ ")" _ "=>" _ e:Block() end:position!() { Node::Function(FunctionNode{args:ar,val:Box::new(e),pos:NodePos{start:start,end:end}}) }
         rule colorLiteral() -> String
             = c:colorCode() {c}
         rule colorCode() -> String
