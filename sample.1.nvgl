@@ -1,0 +1,80 @@
+# sample
+@imports {
+    Math,# Image::Bitmap as img,
+    Math::sin as sin
+}
+@includes {
+    Text
+}
+#*
+@init {
+    !return;
+}*#
+@init {
+    ten<:10;
+    ten2<:ten;
+    retcos <: Math::cos(1);
+    add <: @(a,b)=>{!return a+b;};
+    res_add<:add(10,3);
+    e<:Math::E;
+    c<:10*5+3*(5-3)>=5*3 && 10%3>2;
+    a<:\(&& \(>= \(+ \(* 10 5) \(* 3 \(- 5 3))) \(* 5 3)) \(> \(% 10 3) 2));
+    \(and \(ge \(add \(mul 10 5) \(mul 3 \(sub 5 3))) \(mul 5 3)) \(gt \(mod 10 3) 2));
+    text <::
+        :行の先頭に:が付いてるやつをひとまとめの文字列として扱おうかと
+        :まだちゃんと考えてないからうまく行くか分からんけど
+        :行末にセミコロンを置かせるのが無理になるから
+        :専用の文にするか
+    add <: @(a,b)=>{
+        c <: \(+ a b);
+        !return c;
+    };
+    res_add2<:add(10,3);#*
+    !if (10=2) {
+        a <: 15-5*1;
+    }
+    else if (5-2=4) {
+        a <: 10;
+    }
+    else {
+        a <: 2*3;
+    }
+    10-5*2;*#
+    !return {text:text,add:add};
+}
+@item text {
+    text <::
+        :行の先頭に:が付いてるやつをひとまとめの文字列として扱おうかと
+        :まだちゃんと考えてないからうまく行くか分からんけど
+        :行末にセミコロンを置かせるのが無理になるから
+        :専用の文にするか
+
+    !return text;
+}
+@obj Text {
+    &conf {
+        start: 0 :number,
+        len: 0 :number,
+        text: "" :text,
+        tlconf: {
+            textcolor: #000 : color,
+        },
+    }
+    &init {
+        !return {a:0};
+    }
+    &range {
+        10*5+3*(5-3)>=5*3 && 10%3>2;
+        !return {start:start,length:len};
+    }
+    &tlconf {
+        !return {text:"text: " + text,color:#ff5575,textcolor:tlconf::textcolor};
+    }
+    &frame(f) {
+        !return f;
+    }
+}
+@timeline {
+    Text(start:0,text:"hello world",len:10+3);
+    Text(start:10,text:"hello world"+"!",len:10*4);
+}

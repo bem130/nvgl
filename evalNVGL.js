@@ -324,7 +324,7 @@ function evalExpr(expr,scope) {
             const kl = evalExpr(expr[key].l,scope).val;
             return {type:key,val:kl[expr[key].r.Id.val]};
         case "FuncCall":
-            let val = evalExpr(expr[key].func,scope).val(scope,expr[key].args.map((x=>{return evalExpr(x).val})))
+            let val = evalExpr(expr[key].func,scope).val(scope,expr[key].args.map((x=>{return evalExpr(x,scope).val})))
             return {type:"FuncCall",val:val}
             throw "err1";
         case "UOpr":
@@ -371,6 +371,14 @@ function evalExpr(expr,scope) {
                 }
                 //evalExpr(.expr,scope).val;
                 return {type:key,val:obj};
+            }
+        case "Array":
+            {
+                const arr = [];
+                for (let e of expr[key].val) {
+                    arr.push(evalExpr(e,scope).val);
+                }
+                return {type:key,val:arr};
             }
         case "Stat":
             evalExpr(expr[key].expr,scope).val;
