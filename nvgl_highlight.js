@@ -65,7 +65,7 @@ const tokenizer = {
             [/!(return|break|continue) */, "keyword.control"],
             [/(if|else|elif|while|times) */, "keyword.control"],
             [/[0-9]+/, "number"],
-            [/([0-9a-zA-Z]|_)+(?=:)/, "objkey"],
+            [/([0-9a-zA-Z]|_)+ *(?=:)/, "objkey"],
             [/([0-9a-zA-Z]|_)+/, "variable"],
         ],
         // MLTextA: [

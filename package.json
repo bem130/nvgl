@@ -4,7 +4,7 @@
   "description": "Language for project files in NVG, my video editing software",
   "main": "nvgl.js",
   "scripts": {
-    "make": "npm install && wasm-pack build --target web"
+    "make": "wasm-pack build --target web"
   },
   "author": "bem130 <bem130@ymail.ne.jp>",
   "license": "MIT",

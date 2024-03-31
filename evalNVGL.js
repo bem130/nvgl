@@ -114,7 +114,7 @@ async function resolveImports(ast,filename,Msgs,imports,scope,importsDir) {
 }
 
 async function runInit(ast,filename,Msgs,init,scope) {
-    let ret = evalBlock(init.val.Block,Object.assign({},scope));
+    let ret = evalBlock(init.val.Block,Object.assign({},scope),true).val;
     console.log("Init",ret)
     return Object.assign(scope,ret);
 }
@@ -123,11 +123,8 @@ async function makeItems(ast,filename,Msgs,items,scope) {
     let ret = {}
     for (let n of Object.keys(items)) {
         console.log(items[n])
-        ret[n] = evalBlock(items[n].Block,Object.assign({},scope));
+        ret[n] = evalBlock(items[n].Block,Object.assign({},scope),true).val;
     }
-    // console.log(scope)
-    // evalBlock(init.val.Block,scope);
-    // console.log("Init",ret)
     return Object.assign(scope,ret);
 }
 
@@ -152,18 +149,18 @@ async function initTimeLine(ast,filename,Msgs,timeline,objs,scope) {
         const objconf = evalObjConf(tobj.ObjConf);
         ret_obj.conf = Object.assign(objconf,args);
         // init
-        ret_obj.init = evalBlock(tobj.init.Block,Object.assign({},scope,ret_obj.conf));
+        ret_obj.init = evalBlock(tobj.init.Block,Object.assign({},scope,ret_obj.conf),true).val;
         // length
-        ret_obj.range = evalBlock(tobj.range.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init));
+        ret_obj.range = evalBlock(tobj.range.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init),true).val;
         // tlconf
-        ret_obj.tlconf = evalBlock(tobj.tlconf.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init));
+        ret_obj.tlconf = evalBlock(tobj.tlconf.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init),true).val;
         // frame
         console.log(tobj)
         const argname = tobj.ArgName;
         const frameblock = tobj.ObjFrame.Block;
         console.log(frameblock)
         const framescope = Object.assign({},scope,ret_obj.conf,ret_obj.init);
-        ret_obj.frameFunc = (frame)=>{const arg={};arg[argname]=frame;return evalBlock(frameblock,Object.assign({},framescope,arg))};
+        ret_obj.frameFunc = (frame)=>{const arg={};arg[argname]=frame;return evalBlock(frameblock,Object.assign({},framescope,arg),true).val};
     }
     console.log("TimeLine",ret)
     return ret;
@@ -283,14 +280,17 @@ function ASTchecker(ast,filename,Msgs) {
     return {itemnames:ItemNames,objnames:ObjNames,items:Items,objs:Objs,includes:Includes,imports:Imports,init:Init,timeline:TimeLine};
 }
 
-function evalBlock(block,scope) {
+function evalBlock(block,scope,fntop=false) {
     for (let stat of block.stats) {
         let res = evalExpr(stat,scope);
         if (res.type=="ReturnStat"||res.type=="Return") {
-            return res.val;
+            return res;
+        }
+        if (fntop&&(res.type=="Break"||res.type=="Continue")) {
+            return res;
         }
     }
-    return;
+    return {type:"Block"};
 }
 function evalExpr(expr,scope) {
     if (expr==null) {return}
@@ -316,7 +316,7 @@ function evalExpr(expr,scope) {
                     return ret;
                 }
                 const block = expr[key].val;
-                return {type:key,val:(_scope,_args)=>{return evalBlock(block.Block,Object.assign({},_scope,bindname(_args)))}};
+                return {type:key,val:(_scope,_args)=>{return evalBlock(block.Block,Object.assign({},_scope,bindname(_args)),true).val}};
             }
         case "Id":
             return {type:key,val:scope[expr[key].val]};
@@ -380,17 +380,80 @@ function evalExpr(expr,scope) {
                 }
                 return {type:key,val:arr};
             }
+        case "If":
+            {
+                const _scope = Object.assign({},scope);
+                for (let i of expr[key].val) {
+                    if (evalExpr(i.cond,_scope).val) {
+                        const res = evalBlock(i.block.Block,_scope);
+                        if (res.type=="ReturnStat"||res.type=="Return") {return res;}
+                        for (let i of Object.keys(scope)) {scope[i] = _scope[i];}
+                        return {type:"if"};
+                    }
+                }
+                // const kl = evalExpr(expr[key].l,scope).val;
+                // return {type:key,val:kl[expr[key].r.Id.val]};
+                throw "err4"
+            }
+        case "While":
+            {
+                const _scope = Object.assign({},scope);
+                while (true) {
+                    if (evalExpr(expr[key].cond,_scope).val) {
+                        const res = evalBlock(expr[key].block.Block,_scope);
+                        if (res.type=="ReturnStat"||res.type=="Return") {return res;}
+                    }
+                    else {
+                        for (let i of Object.keys(scope)) {scope[i] = _scope[i];}
+                        break;
+                    }
+                }
+                return {type:"While"};
+            }
+        case "Times":
+            {
+                console.warn(expr[key])
+                const _scope = Object.assign({},scope);
+                const num = evalExpr(expr[key].num,_scope).val;
+                let count = 0;
+                while (count<num) {
+                    const res = evalBlock(expr[key].block.Block,_scope);
+                    if (res.type=="ReturnStat"||res.type=="Return") {return res;}
+                    count++;
+                }
+                for (let i of Object.keys(scope)) {scope[i] = _scope[i];}
+                return {type:"Times"};
+            }
+        case "TimesAs":
+            {
+                console.warn(expr[key])
+                const _scope = Object.assign({},scope);
+                const num = evalExpr(expr[key].num,_scope).val;
+                let count = 0;
+                while (count<num) {
+                    _scope[expr[key].loc.Id.val] = count;
+                    const res = evalBlock(expr[key].block.Block,_scope);
+                    if (res.type=="ReturnStat"||res.type=="Return") {return res;}
+                    count++;
+                }
+                for (let i of Object.keys(scope)) {scope[i] = _scope[i];}
+                return {type:"Times"};
+            }
         case "Stat":
             evalExpr(expr[key].expr,scope).val;
             return {type:key};
         case "AStat":
-            delete evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val];
-            evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val] = evalExpr(expr[key].expr,scope).val;
-            return {type:key};
+            {
+                const res = evalExpr(expr[key].expr,scope).val;
+                evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val] = res;
+                console.log(res,scope)
+                return {type:key};
+            }
         case "MLTAStat":
-            delete evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val];
-            evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val] = expr[key].val;
-            return {type:key};
+            {
+                evalExpr(expr[key].loc.Key.l,scope).val[expr[key].loc.Key.r.Id.val] = expr[key].val;
+                return {type:key};
+            }
         case "ReturnStat":
             return {type:key,val:evalExpr(expr[key].expr,scope).val};
         case "Return":
