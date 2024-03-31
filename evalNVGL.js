@@ -145,8 +145,9 @@ async function initTimeLine(ast,filename,Msgs,timeline,objs,scope) {
             }
             args[a.key.Id.val] = evalExpr(a.val,Object.assign({},scope)).val;
         }
+        console.log("ObjInitScope",args)
         // ObjConf
-        const objconf = evalObjConf(tobj.ObjConf);
+        const objconf = evalObjConf(tobj.ObjConf,scope);
         ret_obj.conf = Object.assign(objconf,args);
         // init
         ret_obj.init = evalBlock(tobj.init.Block,Object.assign({},scope,ret_obj.conf),true).val;
@@ -165,12 +166,12 @@ async function initTimeLine(ast,filename,Msgs,timeline,objs,scope) {
     console.log("TimeLine",ret)
     return ret;
 }
-function evalObjConf(ObjConf) {
+function evalObjConf(ObjConf,scope) {
     let ret = {};
     for (let e of ObjConf) {
         switch (Object.keys(e)[0]) {
             case "ObjConfGElm":
-                ret[e.ObjConfGElm.name] = evalExpr(e.ObjConfGElm.val).val;
+                ret[e.ObjConfGElm.name] = evalExpr(e.ObjConfGElm.val,scope).val;
                 break;
             case "ObjConfRElm":
                 ret[e.ObjConfRElm.name] = evalObjConf(e.ObjConfRElm.val)
@@ -292,6 +293,7 @@ function evalBlock(block,scope,fntop=false) {
     }
     return {type:"Block"};
 }
+
 function evalExpr(expr,scope) {
     if (expr==null) {return}
     const keys = Object.keys(expr);
@@ -302,6 +304,7 @@ function evalExpr(expr,scope) {
         case "Scope":
             return {type:key,val:scope};
         case "String":
+            return {type:key,val:expr[key].val};
         case "Number":
         case "Bool":
             return {type:key,val:expr[key].val};
@@ -319,6 +322,7 @@ function evalExpr(expr,scope) {
                 return {type:key,val:(_scope,_args)=>{return evalBlock(block.Block,Object.assign({},_scope,bindname(_args)),true).val}};
             }
         case "Id":
+            console.log(scope)
             return {type:key,val:scope[expr[key].val]};
         case "Key":
             const kl = evalExpr(expr[key].l,scope).val;
