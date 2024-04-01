@@ -17,6 +17,8 @@ function getLineAndCol(i,code) {
 
 
 async function init(ast,filename,scope,code,importsDir) {
+    NVGStrage = {};
+    NVGPromiselist = [];
     const Msgs = [];
     const astcheck = await ASTchecker(ast,filename,Msgs);
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
@@ -25,10 +27,13 @@ async function init(ast,filename,scope,code,importsDir) {
     scope = await resolveImports(ast,filename,Msgs,astcheck.imports,scope,importsDir);
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await runInit(ast,filename,Msgs,astcheck.init,scope);
+    await Promise.all(NVGPromiselist);NVGPromiselist=[];
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     scope = await makeItems(ast,filename,Msgs,astcheck.items,scope);
+    await Promise.all(NVGPromiselist);NVGPromiselist=[];
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     const timeline = await initTimeLine(ast,filename,Msgs,astcheck.timeline,astcheck.objs,scope);
+    await Promise.all(NVGPromiselist);NVGPromiselist=[];
     if (countErr(Msgs)) { return {type:"err",val:err2txt(Msgs,code),msgs:Msgs}; }
     return {type:"ok",scope:scope,msgs:Msgs,timeline:timeline,msgstxt:err2txt(Msgs,code)}
 }
@@ -161,7 +166,7 @@ async function initTimeLine(ast,filename,Msgs,timeline,objs,scope) {
         const frameblock = tobj.ObjFrame.Block;
         console.log(frameblock)
         const framescope = Object.assign({},scope,ret_obj.conf,ret_obj.init);
-        ret_obj.frameFunc = (frame)=>{const arg={};arg[argname]=frame;return evalBlock(frameblock,Object.assign({},framescope,arg),true).val};
+        ret_obj.frameFunc = async(frame)=>{const arg={};arg[argname]=frame;const ret = evalBlock(frameblock,Object.assign({},framescope,arg),true).val;await Promise.all(NVGPromiselist);NVGPromiselist=[];return ret;};
     }
     console.log("TimeLine",ret)
     return ret;
@@ -322,7 +327,6 @@ function evalExpr(expr,scope) {
                 return {type:key,val:(_scope,_args)=>{return evalBlock(block.Block,Object.assign({},_scope,bindname(_args)),true).val}};
             }
         case "Id":
-            console.log(scope)
             return {type:key,val:scope[expr[key].val]};
         case "Key":
             const kl = evalExpr(expr[key].l,scope).val;
