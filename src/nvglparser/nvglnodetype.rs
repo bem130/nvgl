@@ -11,7 +11,8 @@ pub enum Node {
     Function(FunctionNode),
     // identifier
     Id(IdNode),
-    Key(KeyNode),
+    Key1(KeyNode),
+    Key2(KeyNode),
     // operation
     Opr(OprNode),
     UOpr(UOprNode),

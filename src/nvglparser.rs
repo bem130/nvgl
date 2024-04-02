@@ -33,15 +33,15 @@ peg::parser! {
         rule ImportsBlock() -> Node
             = start:position!() "{" __ e:importselm() ** (_ "," __) (",")? __ "}" end:position!() { Node::ImportsBlock(ImportsBlockNode{val:e,pos:NodePos{start:start,end:end}}) }
         rule importselm() -> ImportsElmNode
-            = start:position!() k:importskey() _ "as" _ v:key() end:position!() {ImportsElmNode{module:Node::Key(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
-            / start:position!() k:importskey() end:position!() {ImportsElmNode{module:Node::Key(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
+            = start:position!() k:importskey() _ "as" _ v:key() end:position!() {ImportsElmNode{module:Node::Key1(k),name:Box::new(v),pos:NodePos{start:start,end:end}}}
+            / start:position!() k:importskey() end:position!() {ImportsElmNode{module:Node::Key1(k.clone()),name:k.r,pos:NodePos{start:start,end:end}}}
         rule objconf() -> Node
             = start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ":" _ v:expr() _ ":" _ t:$(['a'..='z']*) end:position!() { Node::ObjConfGElm(ObjConfGElmNode{name:s.to_string(),valtype:t.to_string(),val:Box::new(v),pos:NodePos{start:start,end:end}}) }
             / start:position!() s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ":" _ "{" __ v:objconf() ** (_ "," __) (",")? __ "}" end:position!() { Node::ObjConfRElm(ObjConfRElmNode{name:s.to_string(),val:v,pos:NodePos{start:start,end:end}}) }
         #[cache_left_rec]
         rule importskey() -> KeyNode
             = precedence! {
-                start:position!() l:importskey() _ "::" _ r:key() end:position!() { KeyNode{l:Box::new(Node::Key(l)), r:Box::new(r),pos:NodePos{start:start,end:end}} }
+                start:position!() l:importskey() _ "::" _ r:key() end:position!() { KeyNode{l:Box::new(Node::Key1(l)), r:Box::new(r),pos:NodePos{start:start,end:end}} }
                 --
                 b:key() start:position!() end:position!() { KeyNode{l:Box::new(Node::Scope()), r:Box::new(b),pos:NodePos{start:start,end:end}} }
             }
@@ -69,10 +69,10 @@ peg::parser! {
         #[cache_left_rec]
         rule lval() -> Node
             = precedence! {
-                start:position!() l:lval() _ "::" _ r:key() end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() l:lval() _ ":[" _ r:expr() "]" end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:lval() _ "::" _ r:key() end:position!() { Node::Key1(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:lval() _ ":[" _ r:expr() "]" end:position!() { Node::Key2(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 --
-                b:key() start:position!() end:position!() { Node::Key(KeyNode{l:Box::new(Node::Scope()), r:Box::new(b),pos:NodePos{start:start,end:end}}) }
+                b:key() start:position!() end:position!() { Node::Key1(KeyNode{l:Box::new(Node::Scope()), r:Box::new(b),pos:NodePos{start:start,end:end}}) }
             }
         #[cache_left_rec]
         rule expr() -> Node = l11()
@@ -180,8 +180,8 @@ peg::parser! {
         #[cache_left_rec]
         rule l1() -> Node
             = precedence! {
-                start:position!() l:l1() _ "::" _ r:key()      end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
-                start:position!() l:l1() _ ":[" _ r:expr() "]" end:position!() { Node::Key(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:l1() _ "::" _ r:key()      end:position!() { Node::Key1(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
+                start:position!() l:l1() _ ":[" _ r:expr() "]" end:position!() { Node::Key2(KeyNode{l:Box::new(l), r:Box::new(r),pos:NodePos{start:start,end:end}}) }
                 c:l0() {c}
             }
         #[cache_left_rec]
