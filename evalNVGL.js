@@ -150,11 +150,19 @@ async function initTimeLine(ast,filename,Msgs,timeline,objs,scope) {
         const objconf = await evalObjConf(tobj.ObjConf,scope);
         ret_obj.conf = Object.assign(objconf,args);
         // init
-        ret_obj.init = (await evalBlock(tobj.init.Block,Object.assign({},scope,ret_obj.conf),true)).val;
+        if (tobj.init!=null) {
+            ret_obj.init = (await evalBlock(tobj.init.Block,Object.assign({},scope,ret_obj.conf),true)).val;
+        } else { ret_obj.init = {}; }
         // length
         ret_obj.range = (await evalBlock(tobj.range.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init),true)).val;
         // tlconf
-        ret_obj.tlconf = (await evalBlock(tobj.tlconf.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init),true)).val;
+        if (tobj.tlconf!=null) {
+            ret_obj.tlconf = (await evalBlock(tobj.tlconf.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init),true)).val;
+        } else { ret_obj.tlconf = {}; }
+        // audio
+        if (tobj.audio!=null) {
+            ret_obj.audio = (await evalBlock(tobj.audio.Block,Object.assign({},scope,ret_obj.conf,ret_obj.init),true)).val;
+        } else { ret_obj.audio = null; }
         // frame
         console.log(tobj)
         const argname = tobj.ArgName;
@@ -196,7 +204,7 @@ function ASTchecker(ast,filename,Msgs) {
         objcnt[objtype]++;
         if (objtype=="Obj") {
             const objname = ast[i].Obj.name.Id.val;
-            const objelmcnt = {conf:0,init:0,range:0,tlconf:0,frame:0};
+            const objelmcnt = {conf:0,init:0,range:0,tlconf:0,audio:0,frame:0};
             if (ObjNames.includes(objname)) {
                 Msgs.push(["err",`Object "${objname}" の定義が重複しています。`,filename,ast[i].Obj.name.Id.pos]);
             }
@@ -225,7 +233,9 @@ function ASTchecker(ast,filename,Msgs) {
             }
             for (let j of Object.keys(objelmcnt)) {
                 if (objelmcnt[j]==0) {
-                    Msgs.push(["err",`Object "${objname}" に ${j} が必要です。`,filename,ast[i].Obj.pos]);
+                    if (["conf","range","frame"].includes(j)) {
+                        Msgs.push(["err",`Object "${objname}" に ${j} が必要です。`,filename,ast[i].Obj.pos]);
+                    }
                 }
                 if (objelmcnt[j]>1) {
                     Msgs.push(["err",`Object "${objname}" の ${j} は1つにして下さい。`,filename,ast[i].Obj.pos]);
@@ -252,10 +262,10 @@ function ASTchecker(ast,filename,Msgs) {
         }
         if (objtype=="Imports") {
             function keyrec(x) {
-                if (Object.keys(x.Key.l)[0]=="Key") {
-                    return [...keyrec(x.Key.l),x.Key.r.Id];
+                if (Object.keys(x.Key1.l)[0]=="Key") {
+                    return [...keyrec(x.Key1.l),x.Key1.r.Id];
                 }
-                return [x.Key.r.Id]
+                return [x.Key1.r.Id]
             }
             const elms = [];
             for (let elm of ast[i].Imports.val.ImportsBlock.val) {
@@ -323,9 +333,17 @@ async function evalExpr(expr,scope) {
             }
         case "Id":
             return {type:key,val:scope[expr[key].val]};
-        case "Key":
-            const kl = (await evalExpr(expr[key].l,scope)).val;
-            return {type:key,val:kl[expr[key].r.Id.val]};
+        case "Key1":
+            {
+                const kl = (await evalExpr(expr[key].l,scope)).val;
+                return {type:key,val:kl[expr[key].r.Id.val]};
+            }
+        case "Key2":
+            {
+                const kl = (await evalExpr(expr[key].l,scope)).val;
+                const kr = (await evalExpr(expr[key].r,scope)).val;
+                return {type:key,val:kl[kr]};
+            }
         case "FuncCall":
             let val = await ((await evalExpr(expr[key].func,scope)).val)(scope,await Promise.all(expr[key].args.map((async (x)=>{return (await evalExpr(x,scope)).val}))))
             return {type:"FuncCall",val:val}
@@ -447,12 +465,12 @@ async function evalExpr(expr,scope) {
         case "AStat":
             {
                 const res = (await evalExpr(expr[key].expr,scope)).val;
-                (await evalExpr(expr[key].loc.Key.l,scope)).val[expr[key].loc.Key.r.Id.val] = res;
+                (await evalExpr(expr[key].loc.Key1.l,scope)).val[expr[key].loc.Key1.r.Id.val] = res;
                 return {type:key};
             }
         case "MLTAStat":
             {
-                (await evalExpr(expr[key].loc.Key.l,scope)).val[expr[key].loc.Key.r.Id.val] = expr[key].val;
+                (await evalExpr(expr[key].loc.Key1.l,scope)).val[expr[key].loc.Key1.r.Id.val] = expr[key].val;
                 return {type:key};
             }
         case "ReturnStat":
