@@ -20,6 +20,7 @@ peg::parser! {
             / start:position!() "&init" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"init".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "&range" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"range".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "&tlconf" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"tlconf".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
+            / start:position!() "&audio" _ e:Block() __ end:position!() { Node::ObjFunc(ObjFuncNode{name:"audio".to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
             / start:position!() "&frame" _ "(" _ s:$((['a'..='z'|'A'..='X']/"_")(['0'..='9'|'a'..='z'|'A'..='X']/"_")*) _ ")" _ e:Block() __ end:position!() { Node::ObjFrame(ObjFrameNode{arg:s.to_string(),val:Box::new(e),pos:NodePos{start:start,end:end}}) }
         rule TLObjStat() -> Node
             = start:position!() f:key() _ "("  __ a:objelm() ** (_ "," __) __ ");" end:position!() { Node::TLObjStat(TLObjStatNode{objname:Box::new(f),args:a,pos:NodePos{start:start,end:end}}) }
