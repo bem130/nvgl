@@ -1,0 +1,14 @@
+{
+  "name": "nvgl",
+  "version": "0.1.0",
+  "files": [
+    "nvgl_bg.wasm",
+    "nvgl.js",
+    "nvgl.d.ts"
+  ],
+  "module": "nvgl.js",
+  "types": "nvgl.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
